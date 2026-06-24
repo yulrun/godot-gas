@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./addons/GodotGAS/icons/godot_gas_logo_small.png" alt="GodotGAS Logo">
+  <img src="./GodotGAS/icons/godot_gas_logo_small.png" alt="GodotGAS Logo">
 </div>
 
 
