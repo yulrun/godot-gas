@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="GameplayEffect" format=3 uid="uid://bvnpphqiaqv6j"]
+
+[ext_resource type="Script" uid="uid://muuj3aeccb8g" path="res://addons/GodotGAS/effects/gameplay_execution_calculation.gd" id="1_us4ph"]
+[ext_resource type="Script" uid="uid://oi7mews1842" path="res://addons/GodotGAS/effects/gameplay_effect_modifier.gd" id="2_3l7us"]
+[ext_resource type="Script" uid="uid://ojoqf0kbd8l5" path="res://addons/GodotGAS/effects/gameplay_effect.gd" id="3_sur7g"]
+
+[sub_resource type="Resource" id="Resource_us4ph"]
+script = ExtResource("2_3l7us")
+attribute_name = "mana"
+magnitude = -25.0
+metadata/_custom_type_script = "uid://oi7mews1842"
+
+[resource]
+script = ExtResource("3_sur7g")
+modifiers = Array[ExtResource("2_3l7us")]([SubResource("Resource_us4ph")])
+metadata/_custom_type_script = "uid://ojoqf0kbd8l5"

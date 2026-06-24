@@ -1,0 +1,582 @@
+[gd_scene format=3 uid="uid://b85oxedxyb40b"]
+
+[ext_resource type="Texture2D" uid="uid://duu34rxax38q1" path="res://addons/GodotGAS/icons/godot_gas_tags.svg" id="1_esxgk"]
+[ext_resource type="Texture2D" uid="uid://heg3o0d18ht6" path="res://addons/GodotGAS/icons/godot_gas_cues.svg" id="2_lqws1"]
+[ext_resource type="Texture2D" uid="uid://cjpwip5jfdrx5" path="res://addons/GodotGAS/icons/godot_gas_attributes.svg" id="3_i6b6t"]
+[ext_resource type="Script" uid="uid://3gy87g7uedio" path="res://addons/GodotGAS/editor/dashboard_tabs/cue_manager_tab.gd" id="4_i6b6t"]
+[ext_resource type="Script" uid="uid://dmjb21w3fa2fc" path="res://addons/GodotGAS/editor/dashboard_tabs/tag_manager_tab.gd" id="4_x7eon"]
+[ext_resource type="StyleBox" uid="uid://chsnvn3o54ipk" path="res://addons/GodotGAS/editor/styles/editor_panel_flat_style.tres" id="5_513kd"]
+[ext_resource type="StyleBox" uid="uid://bp5vwhisutarx" path="res://addons/GodotGAS/editor/styles/editor_panel_flat_style_dark.tres" id="5_bm337"]
+[ext_resource type="Script" uid="uid://bs7kyvq8kwqx1" path="res://addons/GodotGAS/editor/dashboard_tabs/attribute_sets_tab.gd" id="6_nbd5k"]
+[ext_resource type="Texture2D" uid="uid://ck66n05dndntl" path="res://addons/GodotGAS/icons/godot_gas_icon_star.svg" id="9_dfyq7"]
+[ext_resource type="Texture2D" uid="uid://t44lvy7ukvu4" path="res://addons/GodotGAS/icons/godot_gas_icon_heart.svg" id="10_eh6l2"]
+[ext_resource type="Texture2D" uid="uid://lyq5j1b67clf" path="res://addons/GodotGAS/icons/godot_gas_icon_bolt.svg" id="11_go3wn"]
+[ext_resource type="Texture2D" uid="uid://6qi0ih8n0t1h" path="res://addons/GodotGAS/icons/godot_gas_icon_shield.svg" id="12_sgjrq"]
+[ext_resource type="Texture2D" uid="uid://b6rhbvsfaokw3" path="res://addons/GodotGAS/icons/godot_gas_icon_sword.svg" id="13_q8jy7"]
+
+[sub_resource type="DPITexture" id="DPITexture_dfyq7"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><path fill=\"#ff5d5d\" d=\"M2 1v8.586l1.293-1.293a1 1 0 0 1 1.414 0L7 10.587l2.293-2.293a1 1 0 0 1 1.414 0L13 10.586l1-1V6H9V1H2zm8 0v4h4zm-6 9.414-2 2V15h12v-2.586l-.293.293a1 1 0 0 1-1.414 0L10 10.414l-2.293 2.293a1 1 0 0 1-1.414 0L4 10.414z\"/></svg>
+"
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0tka5"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eh6l2"]
+content_margin_left = 15.0
+content_margin_top = 15.0
+content_margin_right = 15.0
+content_margin_bottom = 15.0
+bg_color = Color(0.07450981, 0.15686275, 0.3137255, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_e30ly"]
+
+[node name="GodotGASDashboard" type="Control" unique_id=1365836807]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=588515120]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="TabContainer" type="TabContainer" parent="MarginContainer" unique_id=817705072]
+layout_mode = 2
+current_tab = 0
+tab_0/title = "Tag Manager"
+tab_0/icon = ExtResource("1_esxgk")
+tab_1/title = "Cue Manager"
+tab_1/icon = ExtResource("2_lqws1")
+tab_2/title = "Attribute Sets"
+tab_2/icon = ExtResource("3_i6b6t")
+
+[node name="TagManager" type="Control" parent="MarginContainer/TabContainer" unique_id=1336660320]
+layout_mode = 2
+script = ExtResource("4_x7eon")
+metadata/_tab_index = 0
+metadata/_tab_name = "Tag Manager"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/TagManager" unique_id=1081297202]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer" unique_id=1383097429]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="PanelContainer2" type="PanelContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer" unique_id=1020125744]
+layout_mode = 2
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer2" unique_id=246134566]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer" unique_id=1073521447]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer" unique_id=1564893646]
+layout_mode = 2
+text = "Add a New Tag:"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer" unique_id=2134068575]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer" unique_id=550324461]
+layout_mode = 2
+
+[node name="NewTagInput" type="LineEdit" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer/HBoxContainer" unique_id=85391967]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g., \"Ability.Fireball.Impact\""
+
+[node name="BtnAddTag" type="Button" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1178222304]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Add Tag"
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer" unique_id=422731519]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer" unique_id=1384100075]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer" unique_id=1440285792]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1269986730]
+layout_mode = 2
+text = "Current Tag Registry:"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1237042363]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=656292247]
+layout_mode = 2
+
+[node name="SearchTagFilter" type="LineEdit" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1422652412]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Filter Tags..."
+
+[node name="BtnExpandCollapse" type="Button" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1690220109]
+unique_name_in_owner = true
+layout_mode = 2
+icon = SubResource("DPITexture_dfyq7")
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1069205062]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_bm337")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/PanelContainer" unique_id=918989802]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="TagTree" type="Tree" parent="MarginContainer/TabContainer/TagManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/PanelContainer/MarginContainer" unique_id=1357454940]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+hide_root = true
+
+[node name="CueManager" type="Control" parent="MarginContainer/TabContainer" unique_id=536936993]
+visible = false
+layout_mode = 2
+script = ExtResource("4_i6b6t")
+metadata/_tab_index = 1
+metadata/_tab_name = "Cue Manager"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/CueManager" unique_id=61227161]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer" unique_id=1139205604]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer" unique_id=1623722070]
+layout_mode = 2
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer" unique_id=1356994924]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer" unique_id=1458699062]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1158162975]
+layout_mode = 2
+text = "Map a New Cue:"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1909290354]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=645151838]
+layout_mode = 2
+
+[node name="BtnSelectTag" type="Button" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2122670812]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Select Tag..."
+
+[node name="LblSelectedScene" type="Label" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1336727962]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No Scene Selected"
+
+[node name="BtnBrowseScene" type="Button" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=486310524]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Browse Scene"
+
+[node name="BtnAddMapping" type="Button" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1842148943]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Add Mapping"
+icon = SubResource("DPITexture_dfyq7")
+
+[node name="BtnCancel" type="Button" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=552787471]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Cancel"
+icon = SubResource("DPITexture_dfyq7")
+
+[node name="PanelContainer2" type="PanelContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer" unique_id=1285025525]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer2" unique_id=685716924]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer" unique_id=36891957]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer" unique_id=1773235004]
+layout_mode = 2
+text = "Current Cue Registry:"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer" unique_id=481112428]
+layout_mode = 2
+
+[node name="SearchFilter" type="LineEdit" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer" unique_id=1598502751]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Filter Tags..."
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer" unique_id=1123378934]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CueListVBox" type="VBoxContainer" parent="MarginContainer/TabContainer/CueManager/MarginContainer/VBoxContainer/PanelContainer2/MarginContainer/VBoxContainer/ScrollContainer" unique_id=80000277]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AttributeSets" type="Control" parent="MarginContainer/TabContainer" unique_id=1328496092]
+visible = false
+layout_mode = 2
+script = ExtResource("6_nbd5k")
+metadata/_tab_index = 2
+metadata/_tab_name = "Attribute Sets"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/AttributeSets" unique_id=678414514]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer" unique_id=1776430902]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer" unique_id=114790063]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+
+[node name="SetManagerVBox" type="VBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer" unique_id=845385081]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox" unique_id=1710475939]
+layout_mode = 2
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer" unique_id=396887604]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer/MarginContainer" unique_id=469637177]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer/MarginContainer/VBoxContainer" unique_id=690161186]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Create a new Attribute Set:"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer/MarginContainer/VBoxContainer" unique_id=139599581]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer/MarginContainer/VBoxContainer" unique_id=1168122880]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="NewSetInput" type="LineEdit" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=445868977]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g., CharacterStats"
+
+[node name="BtnCreateSet" type="Button" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=6459017]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Create New Set"
+
+[node name="PanelContainer2" type="PanelContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox" unique_id=635913201]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2" unique_id=1373091353]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer" unique_id=302016358]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer" unique_id=1819000648]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/HBoxContainer" unique_id=502304541]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Attribute Sets"
+
+[node name="BtnGenerateScript" type="Button" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/HBoxContainer" unique_id=248156413]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Generate Script for Selected Attribute Set."
+disabled = true
+text = "Generate Script"
+icon = ExtResource("3_i6b6t")
+
+[node name="BtnSettings" type="Button" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/HBoxContainer" unique_id=765133912]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Script Generation Location Settings."
+icon = SubResource("DPITexture_dfyq7")
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer" unique_id=1022270563]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer" unique_id=183229259]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_bm337")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/PanelContainer" unique_id=224085122]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="AttributeSetsScrollContainer" type="ScrollContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/PanelContainer/MarginContainer" unique_id=568972675]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="SetTree" type="Tree" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/SetManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/AttributeSetsScrollContainer" unique_id=6565585]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/guide_color = Color(1, 1, 1, 0.15)
+theme_override_constants/v_separation = 15
+theme_override_styles/panel = SubResource("StyleBoxEmpty_0tka5")
+theme_override_styles/selected = SubResource("StyleBoxFlat_eh6l2")
+theme_override_styles/selected_focus = SubResource("StyleBoxFlat_eh6l2")
+hide_root = true
+
+[node name="AttributeManagerVBox" type="VBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer" unique_id=232835007]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox" unique_id=1856629180]
+layout_mode = 2
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer" unique_id=1986708582]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer" unique_id=366572565]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer/VBoxContainer" unique_id=211434901]
+layout_mode = 2
+text = "Add new Attribute:"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer/VBoxContainer" unique_id=111998087]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer/VBoxContainer" unique_id=2067112736]
+layout_mode = 2
+
+[node name="BtnIcon" type="OptionButton" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2114831511]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Icon is for UI/UX only, no effect on actual Attribute."
+disabled = true
+selected = 0
+item_count = 5
+popup/item_0/text = "Star"
+popup/item_0/icon = ExtResource("9_dfyq7")
+popup/item_0/id = 0
+popup/item_1/text = "Heart"
+popup/item_1/icon = ExtResource("10_eh6l2")
+popup/item_1/id = 1
+popup/item_2/text = "Bolt"
+popup/item_2/icon = ExtResource("11_go3wn")
+popup/item_2/id = 2
+popup/item_3/text = "Shield"
+popup/item_3/icon = ExtResource("12_sgjrq")
+popup/item_3/id = 3
+popup/item_4/text = "Sword"
+popup/item_4/icon = ExtResource("13_q8jy7")
+popup/item_4/id = 4
+
+[node name="NewAttributeInput" type="LineEdit" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1369616201]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g., max_health"
+editable = false
+
+[node name="NewAttributeValue" type="SpinBox" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=510234933]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 99999.0
+step = 0.1
+editable = false
+prefix = "Default:"
+
+[node name="BtnAddAttribute" type="Button" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2141550527]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Add"
+
+[node name="PanelContainer2" type="PanelContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox" unique_id=300401598]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_513kd")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2" unique_id=14681089]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer" unique_id=1023555573]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer/VBoxContainer" unique_id=933695325]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="LblSelectedSet" type="Label" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1056716168]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No Set Selected"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer/VBoxContainer" unique_id=1098255177]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer/VBoxContainer" unique_id=932806800]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_bm337")
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/PanelContainer" unique_id=1279546884]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="AttributeScrollContainer" type="ScrollContainer" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/PanelContainer/MarginContainer" unique_id=605731782]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AttributeTree" type="Tree" parent="MarginContainer/TabContainer/AttributeSets/MarginContainer/VBoxContainer/HBoxContainer/AttributeManagerVBox/PanelContainer2/MarginContainer/VBoxContainer/PanelContainer/MarginContainer/AttributeScrollContainer" unique_id=85039616]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/guide_color = Color(1, 1, 1, 0.15)
+theme_override_constants/v_separation = 15
+theme_override_styles/panel = SubResource("StyleBoxEmpty_e30ly")
+theme_override_styles/selected = SubResource("StyleBoxFlat_eh6l2")
+theme_override_styles/selected_focus = SubResource("StyleBoxFlat_eh6l2")
+columns = 2
+column_titles_visible = true
+hide_root = true

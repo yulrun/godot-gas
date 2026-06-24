@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://b4hmkxxp8wpl3"]
+
+[ext_resource type="Script" uid="uid://cawar4hfmnhjd" path="res://addons/GodotGAS/examples/example_scene.gd" id="1_a7xuv"]
+[ext_resource type="PackedScene" uid="uid://drif4y8qrmlaa" path="res://addons/GodotGAS/examples/demo_player.tscn" id="2_1menn"]
+[ext_resource type="PackedScene" uid="uid://b6eqnum1xua0j" path="res://addons/GodotGAS/examples/demo_ui.tscn" id="2_qi3ev"]
+[ext_resource type="PackedScene" uid="uid://cp44jhq5y0l5y" path="res://addons/GodotGAS/examples/demo_dummy.tscn" id="3_qi3ev"]
+
+[node name="ExampleScene" type="Node2D" unique_id=978348835]
+position = Vector2(576, 324)
+script = ExtResource("1_a7xuv")
+
+[node name="DemoUi" parent="." unique_id=1333486748 node_paths=PackedStringArray("player_asc", "dummy_asc", "player_hp_label", "player_mp_label", "dummy_hp_label") instance=ExtResource("2_qi3ev")]
+player_asc = NodePath("../DemoPlayer/AbilitySystemComponent")
+dummy_asc = NodePath("../DemoDummy/AbilitySystemComponent")
+player_hp_label = NodePath("PlayerHP")
+player_mp_label = NodePath("PlayerMP")
+dummy_hp_label = NodePath("DummyHP")
+
+[node name="PlayerHP" type="Label" parent="DemoUi" unique_id=1243184017]
+offset_left = 337.0
+offset_top = 190.0
+offset_right = 412.0
+offset_bottom = 213.0
+text = "Player HP"
+
+[node name="PlayerMP" type="Label" parent="DemoUi" unique_id=1606057109]
+offset_left = 337.0
+offset_top = 219.0
+offset_right = 412.0
+offset_bottom = 242.0
+text = "Player MP"
+
+[node name="DummyHP" type="Label" parent="DemoUi" unique_id=520728175]
+offset_left = 732.0
+offset_top = 196.0
+offset_right = 820.0
+offset_bottom = 219.0
+text = "Placeholder"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=233486571]
+
+[node name="DemoPlayer" parent="." unique_id=250964031 instance=ExtResource("2_1menn")]
+position = Vector2(-200, 0)
+
+[node name="DemoDummy" parent="." unique_id=244178842 instance=ExtResource("3_qi3ev")]
+position = Vector2(200, 0)

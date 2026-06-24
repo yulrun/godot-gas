@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cb2y3wmbxsr54"]
+
+[ext_resource type="Script" uid="uid://dd80cdc6smopl" path="res://addons/GodotGAS/examples/abilities/ga_poison_recovery.gd" id="1_h0dxh"]
+
+[node name="GaPoisonRecovery" type="Node" unique_id=786885322]
+script = ExtResource("1_h0dxh")
+ability_tag = &"Example.Ability.Heal.Triggered"
+trigger_event_tag = &"Example.Event.Defend.Hit"

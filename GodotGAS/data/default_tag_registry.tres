@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="GameplayTagRegistry" format=3 uid="uid://dgyprssm7ah42"]
+
+[ext_resource type="Script" uid="uid://capxhrkjcf32t" path="res://addons/GodotGAS/gameplay_tag/gameplay_tag_registry.gd" id="1_hekpq"]
+
+[resource]
+script = ExtResource("1_hekpq")
+tags = Array[StringName]([&"Example.Ability.Arrow.Impact", &"Example.Ability.Arrow.Shoot", &"Example.Ability.Heal.Triggered", &"Example.Ability.Poison.Applied", &"Example.Ability.Poison.Cast", &"Example.Event.Damage.Critical", &"Example.Event.Damage.Missed", &"Example.Event.Defend.Hit", &"Example.State.Cooldown.Arrow", &"Example.State.Cooldown.Poison"])
+metadata/_custom_type_script = "uid://capxhrkjcf32t"

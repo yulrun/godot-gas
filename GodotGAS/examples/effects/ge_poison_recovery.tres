@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="GameplayEffect" format=3 uid="uid://q8l8ydplbc1m"]
+
+[ext_resource type="Script" uid="uid://muuj3aeccb8g" path="res://addons/GodotGAS/effects/gameplay_execution_calculation.gd" id="1_utdx3"]
+[ext_resource type="Script" uid="uid://oi7mews1842" path="res://addons/GodotGAS/effects/gameplay_effect_modifier.gd" id="2_g75vw"]
+[ext_resource type="Script" uid="uid://ojoqf0kbd8l5" path="res://addons/GodotGAS/effects/gameplay_effect.gd" id="3_dpgqm"]
+
+[sub_resource type="Resource" id="Resource_utdx3"]
+script = ExtResource("2_g75vw")
+attribute_name = "health"
+magnitude = 5.0
+metadata/_custom_type_script = "uid://oi7mews1842"
+
+[resource]
+script = ExtResource("3_dpgqm")
+policy = 1
+duration = 15.0
+period = 1.5
+application_cue_tags = Array[StringName]([&"Example.Ability.Heal.Triggered"])
+modifiers = Array[ExtResource("2_g75vw")]([SubResource("Resource_utdx3")])
+metadata/_custom_type_script = "uid://ojoqf0kbd8l5"

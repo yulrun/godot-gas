@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c7sbfrqpsqbxi"]
+
+[ext_resource type="Script" uid="uid://nj70b7w04yr7" path="res://addons/GodotGAS/examples/calculations/mana_regen_calc.gd" id="1_barut"]
+
+[node name="ManaRegenCalc" type="Node" unique_id=259398644]
+script = ExtResource("1_barut")

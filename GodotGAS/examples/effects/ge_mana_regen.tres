@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="GameplayEffect" format=3 uid="uid://b34u8316s3ijs"]
+
+[ext_resource type="Script" uid="uid://muuj3aeccb8g" path="res://addons/GodotGAS/effects/gameplay_execution_calculation.gd" id="1_qx0w8"]
+[ext_resource type="Script" uid="uid://nj70b7w04yr7" path="res://addons/GodotGAS/examples/calculations/mana_regen_calc.gd" id="2_algh2"]
+[ext_resource type="Script" uid="uid://oi7mews1842" path="res://addons/GodotGAS/effects/gameplay_effect_modifier.gd" id="2_gjuwd"]
+[ext_resource type="Script" uid="uid://ojoqf0kbd8l5" path="res://addons/GodotGAS/effects/gameplay_effect.gd" id="3_algh2"]
+
+[sub_resource type="Resource" id="Resource_brqe3"]
+script = ExtResource("2_algh2")
+metadata/_custom_type_script = "uid://nj70b7w04yr7"
+
+[resource]
+script = ExtResource("3_algh2")
+policy = 2
+period = 1.0
+executions = Array[ExtResource("1_qx0w8")]([SubResource("Resource_brqe3")])
+metadata/_custom_type_script = "uid://ojoqf0kbd8l5"

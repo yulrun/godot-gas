@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ry6xhmxml1kk"]
+
+[ext_resource type="Script" uid="uid://mdfko4h7jay4" path="res://addons/GodotGAS/examples/calculations/arrow_damage_calc.gd" id="1_ssugh"]
+
+[node name="ArrowDamageCalc" type="Node" unique_id=534003555]
+script = ExtResource("1_ssugh")

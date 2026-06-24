@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://drif4y8qrmlaa"]
+
+[ext_resource type="Script" uid="uid://dtnxbsf702r57" path="res://addons/GodotGAS/examples/demo_player.gd" id="1_5f1k2"]
+[ext_resource type="Resource" uid="uid://b34u8316s3ijs" path="res://addons/GodotGAS/examples/effects/ge_mana_regen.tres" id="2_fgqlr"]
+[ext_resource type="Script" uid="uid://olhwsc0t0v82" path="res://addons/GodotGAS/components/ability_system_component.gd" id="2_yw70t"]
+[ext_resource type="Script" uid="uid://dt72jhl7v101v" path="res://addons/GodotGAS/attributes/attribute_set.gd" id="3_lci6v"]
+[ext_resource type="Script" uid="uid://cwqf6ysaxsg64" path="res://addons/GodotGAS/examples/attribute_sets/example_attribute_set.gd" id="4_44eok"]
+[ext_resource type="PackedScene" uid="uid://ccujkox1q1qwt" path="res://addons/GodotGAS/examples/abilities/ga_arrow_shoot.tscn" id="5_44eok"]
+[ext_resource type="PackedScene" uid="uid://cpod6ipvlc2gm" path="res://addons/GodotGAS/examples/abilities/ga_poison_cast.tscn" id="6_fgqlr"]
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_5f1k2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lbiec"]
+size = Vector2(64, 64)
+
+[sub_resource type="Resource" id="Resource_fgqlr"]
+script = ExtResource("4_44eok")
+metadata/_custom_type_script = "uid://cwqf6ysaxsg64"
+
+[node name="DemoPlayer" type="CharacterBody2D" unique_id=250964031]
+script = ExtResource("1_5f1k2")
+mana_regen_effect = ExtResource("2_fgqlr")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=680208850]
+position = Vector2(1.9073486e-06, 1.9073486e-06)
+scale = Vector2(64, 64)
+texture = SubResource("PlaceholderTexture2D_5f1k2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=642991329]
+shape = SubResource("RectangleShape2D_lbiec")
+
+[node name="AbilitySystemComponent" type="Node" parent="." unique_id=2075463568]
+script = ExtResource("2_yw70t")
+attribute_sets = Array[ExtResource("3_lci6v")]([SubResource("Resource_fgqlr")])
+debug_signal_log = true
+metadata/_custom_type_script = "uid://olhwsc0t0v82"
+
+[node name="GaArrowShoot" parent="AbilitySystemComponent" unique_id=348880013 instance=ExtResource("5_44eok")]
+
+[node name="GaPoisonCast" parent="AbilitySystemComponent" unique_id=2141841010 instance=ExtResource("6_fgqlr")]

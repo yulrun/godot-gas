@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://ccujkox1q1qwt"]
+
+[ext_resource type="Script" uid="uid://diiobk5p2w5d7" path="res://addons/GodotGAS/examples/abilities/ga_arrow_shoot.gd" id="1_6urpg"]
+[ext_resource type="PackedScene" uid="uid://dj6jvni3r5cey" path="res://addons/GodotGAS/examples/demo_arrow.tscn" id="2_glb0s"]
+[ext_resource type="Resource" uid="uid://buwys6c1i6e07" path="res://addons/GodotGAS/examples/effects/ge_arrow_cooldown.tres" id="2_r82pg"]
+[ext_resource type="Resource" uid="uid://bregcmpqimmt5" path="res://addons/GodotGAS/examples/effects/ge_arrow_damage.tres" id="3_glb0s"]
+
+[node name="GaArrowShoot" type="Node" unique_id=348880013]
+script = ExtResource("1_6urpg")
+arrow_scene = ExtResource("2_glb0s")
+damage_effect = ExtResource("3_glb0s")
+ability_name = "Shoot Arrow"
+ability_tag = &"Example.Ability.Arrow.Shoot"
+cooldown_effect = ExtResource("2_r82pg")

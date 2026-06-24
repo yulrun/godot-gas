@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="GameplayEffect" format=3 uid="uid://bregcmpqimmt5"]
+
+[ext_resource type="Script" uid="uid://muuj3aeccb8g" path="res://addons/GodotGAS/effects/gameplay_execution_calculation.gd" id="1_npwoo"]
+[ext_resource type="Script" uid="uid://mdfko4h7jay4" path="res://addons/GodotGAS/examples/calculations/arrow_damage_calc.gd" id="2_pyv1t"]
+[ext_resource type="Script" uid="uid://oi7mews1842" path="res://addons/GodotGAS/effects/gameplay_effect_modifier.gd" id="2_yw4gx"]
+[ext_resource type="Script" uid="uid://ojoqf0kbd8l5" path="res://addons/GodotGAS/effects/gameplay_effect.gd" id="3_pyv1t"]
+
+[sub_resource type="Resource" id="Resource_ny41g"]
+script = ExtResource("2_pyv1t")
+metadata/_custom_type_script = "uid://mdfko4h7jay4"
+
+[resource]
+script = ExtResource("3_pyv1t")
+application_cue_tags = Array[StringName]([&"Example.Ability.Arrow.Impact"])
+executions = Array[ExtResource("1_npwoo")]([SubResource("Resource_ny41g")])
+granted_tags = Array[StringName]([&"Example.Ability.Arrow.Impact"])
+metadata/_custom_type_script = "uid://ojoqf0kbd8l5"
