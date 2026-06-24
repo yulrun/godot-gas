@@ -1,1 +1,35 @@
-.DS_store
+# Godot-specific ignores
+.godot/
+*.uid
+exported_presets.cfg
+
+# Godot export silently creates these
+*.html
+*.js
+*.wasm
+*.pck
+*.apk
+*.exe
+*.zip
+
+# Mono/C# specific ignores
+.mono/
+data_*/
+mono_crash.*.json
+*.csproj
+*.sln
+
+# macOS specific ignores
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.VolumeIcon.icns
+.com.apple.timemachine.donotbackup
+
+# Directories potentially created on external memory
+.Trashes
+.TemporaryItems
