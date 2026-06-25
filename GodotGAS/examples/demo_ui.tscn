@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://b6eqnum1xua0j"]
-
-[ext_resource type="Script" uid="uid://clfyopdx17yd" path="res://addons/GodotGAS/examples/demo_ui.gd" id="1_q4fbo"]
-
-[node name="DemoUi" type="CanvasLayer" unique_id=1333486748]
-script = ExtResource("1_q4fbo")
