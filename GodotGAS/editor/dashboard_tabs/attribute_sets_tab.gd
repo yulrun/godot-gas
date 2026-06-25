@@ -594,7 +594,7 @@ func _on_generate_script_pressed() -> void:
 	if _current_set == "": 
 		return
 	
-	var file_name = _current_set.to_snake_case() + ".gd"
+	var file_name = _current_set.to_snake_case() + "_attribute_set.gd"
 	var file_path = _output_dir + "/" + file_name
 	
 	# SAFEGUARD: Check if the script is open in the Editor
