@@ -29,10 +29,9 @@ func execute(spec: GameplayEffectSpec, target_asc: AbilitySystemComponent) -> Di
 	
 	# 3. Evasion Check
 	var hit_roll = randf() * 100.0
-	#if hit_roll <= target_evasion:
-	if true:
+	if hit_roll <= target_evasion:
 		# Attack was evaded! Send a Miss event if desired, but deal 0 damage.
-		target_asc.send_gameplay_event(GameplayTags.Example_Event_Damage_Missed, spec.context)
+		spec.inject_tag(GameplayTags.Example_Event_Damage_Missed)
 		return {"health": 0.0}
 		
 	# 4. Critical Hit Check

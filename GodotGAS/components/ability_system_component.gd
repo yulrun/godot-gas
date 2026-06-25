@@ -40,6 +40,10 @@ signal active_effect_removed(active_effect: ActiveGameplayEffect)
 ## The payload dictionary contains context (e.g., {"tags": [array of blocking tags]}).
 signal ability_activation_failed(ability: GameplayAbility, reason: ActivationError, payload: Dictionary)
 
+## Fired when THIS ASC receives an effect from someone else. 
+## UI listens to this to spawn Damage Numbers, "Miss!", or "Blocked!" text.
+signal effect_received(source_asc: AbilitySystemComponent, spec: GameplayEffectSpec)
+
 @export var attribute_sets: Array[AttributeSet] = []
 
 @export var debug_signal_log: bool = false
@@ -344,14 +348,21 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> bool:
 	match effect.policy:
 		GameplayEffect.DurationPolicy.INSTANT:
 			_execute_instant_spec(spec)
-			return true
-			
 		GameplayEffect.DurationPolicy.DURATION, GameplayEffect.DurationPolicy.INFINITE:
-			# Directly pass the Spec. No more temporary bridges needed.
 			_execute_active_spec(spec)
-			return true
 	
-	return false
+	# 1. Notify the Defender's UI that an effect was fully processed
+	var source_asc = null
+	if spec.context and spec.context.instigator:
+		source_asc = spec.context.instigator.get_node_or_null("AbilitySystemComponent") # Adjust based on your node path
+		
+	effect_received.emit(source_asc, spec)
+	
+	# 2. Convert injected tags (Miss, Crit, Block) into real Gameplay Events!
+	for dynamic_tag in spec.dynamic_tags:
+		send_gameplay_event(dynamic_tag, spec.context)
+	
+	return true
 
 
 ## Processes effects that happen immediately and permanently (like taking damage).
@@ -476,7 +487,10 @@ func _apply_modifiers(spec: GameplayEffectSpec) -> Dictionary:
 		var actual_change = _apply_attribute_change(attr_name, applied_deltas[attr_name], spec)
 		if actual_change != 0.0:
 			final_clamped_deltas[attr_name] = actual_change
-		
+	
+	# NEW: Save the final results directly into the spec before returning!
+	spec.calculated_deltas = final_clamped_deltas
+	
 	return final_clamped_deltas
 #endregion
 

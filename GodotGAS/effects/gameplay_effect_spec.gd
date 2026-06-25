@@ -22,6 +22,9 @@ var application_time: float = 0.0
 ## Tags injected dynamically at runtime by ExecCalcs or Abilities
 var dynamic_tags: Array[StringName] = []
 
+## A dictionary populated by the ASC after modifiers are applied, storing the EXACT final clamped changes (e.g., {"Health": -50.0})
+var calculated_deltas: Dictionary = {}
+
 
 #region Initialization
 ## Initializes the live effect instance.
