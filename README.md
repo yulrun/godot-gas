@@ -39,7 +39,7 @@ This README provides a high-level overview. For the complete setup guide, deep d
 4. Navigate to `Project -> Project Settings -> Plugins` and enable **GodotGAS**.
 5. The GodotGAS Editor Dashboard will appear in your editor's top tab menu, and the `GameplayCueManager` Autoload will be automatically registered.
 
-*For your first "Hello World" setup, please refer to the [Quick Start Guide](https://www.yulrun.dev/GodotGAS/).*
+*For your first "Hello World" setup, please refer to the [Quick Start Guide](https://www.yulrun.dev/GodotGAS/3_practical_implementation.html).*
 
 ## License
 
