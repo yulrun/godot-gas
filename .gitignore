@@ -12,6 +12,9 @@ exported_presets.cfg
 *.exe
 *.zip
 
+# Testing
+.testing/
+
 # Mono/C# specific ignores
 .mono/
 data_*/
