@@ -2,10 +2,7 @@
   <img src="./GodotGAS/icons/godot_gas_logo_small.png" alt="GodotGAS Logo">
 </div>
 
-
-[Buy me a Coffee!](https://ko-fi.com/yulrundev)
-
-
+[☕ Buy me a Coffee!](https://ko-fi.com/yulrundev)
 
 # GodotGAS
 **A Production-Ready Gameplay Ability System for Godot 4.6+**
@@ -25,13 +22,14 @@ This README provides a high-level overview. For the complete setup guide, deep d
 
 ## Core Features
 
-* **The Ability System Component (ASC):** The central state manager for your entities. It routes payloads, manages lifecycles (with safe `cleanup()` teardowns), and serves as the brain of the framework.
-* **Strict Gameplay Tags:** A global `GameplayTagManager` Autoload utilizing optimized `StringName` comparisons and strict Regex validation to ensure your tag hierarchies (e.g., `Status.Stunned`, `Event.Damage`) remain pristine.
-* **Object-Pooled Gameplay Cues:** A highly efficient, Variant-based Object Pool managed by the `GameplayCueManager`. Fire off visual effects, audio, and UI updates safely without memory leaks or instantiate lag.
-* **Decoupled Payload Pipeline:** A structured data flow routing `TargetData` -> `GameplayEffectContext` -> `GameplayEffectSpec` to guarantee accurate calculations and instigator/causer tracking.
-* **Data-Driven Effect Stacking:** An elegant, built-in solution for stacking policies. Developers can easily manage stacking by utilizing arrays like `application_ignore_tags` directly within Gameplay Effects.
-* **Editor Dashboard (`@tool`):** A fully polished, custom Godot Editor UI for performing CRUD operations on Tags and Cues, alongside an Attribute Set Generator that creates C++ macro-style GDScript files for your stats.
-* **Event-Driven Abilities:** Completely decoupled hardware input routing and event-listening built natively into `GameplayAbility`.
+* **The Ability System Component (ASC):** The central state manager and event bus for your entities. It routes payloads, manages active effect lifecycles (with safe `cleanup()` teardowns), and broadcasts isolated signals (`attribute_changed`, `effect_received`) to keep your UI completely decoupled from combat math.
+* **Strict Gameplay Tags:** Hierarchical state tracking (e.g., `Status.Stunned`, `Event.Damage.Critical`) utilizing optimized `StringName` comparisons. The framework auto-generates a static `GameplayTags` class for safe IDE autocomplete and features strict Regex validation to keep your tags pristine.
+* **Execution Calculations (ExecCalcs):** Move beyond simple modifiers. Write custom mathematical formulas that read live stats from both the Attacker and the Defender simultaneously (e.g., `Damage = Attacker.AttackPower - Defender.Armor`).
+* **Object-Pooled Gameplay Cues:** A highly efficient, Variant-based Object Pool managed by the global `GameplayCueManager`. Fire off visual effects, audio, and floating combat text safely without instantiation micro-stutters or memory leaks.
+* **Decoupled Payload Pipeline:** A structured data flow routing `TargetData` -> `GameplayEffectContext` -> `GameplayEffectSpec` to guarantee accurate calculations and instigator/causer tracking across the network.
+* **Data-Driven Effect Stacking:** An elegant, built-in solution for stacking policies. Developers can easily manage stacking by utilizing arrays like `application_ignore_tags` directly within standard `GameplayEffect` resources.
+* **Editor Dashboard (`@tool`):** A polished, custom Godot Editor UI for performing CRUD operations on Tags and Cues, alongside an **Attribute Set Generator** that instantly drafts and writes C++ macro-style GDScript files for your stats.
+* **Event-Driven Abilities:** Completely decoupled hardware input routing (`Input IDs`) and event-listening built natively into `GameplayAbility`, allowing for charge-ups, channeling, and passive reactive triggers.
 
 ## Quick Start / Installation
 
@@ -39,9 +37,9 @@ This README provides a high-level overview. For the complete setup guide, deep d
 2. Copy the `addons/GodotGAS` folder into your Godot project's `addons/` directory.
 3. Open your project in **Godot 4.6+**.
 4. Navigate to `Project -> Project Settings -> Plugins` and enable **GodotGAS**.
-5. The GodotGAS Editor Dashboard will appear in your editor, and the core Autoloads (`GameplayTagManager`, `GameplayCueManager`) will be automatically registered.
+5. The GodotGAS Editor Dashboard will appear in your editor's top tab menu, and the `GameplayCueManager` Autoload will be automatically registered.
 
-*For your first "Hello World" setup, please refer to the [Quick Start Guide](https://www.yulrun.dev/GodotGAS/).*
+*For your first "Hello World" setup, please refer to the [Quick Start Guide](https://www.yulrun.dev/GodotGAS/3_practical_implementation.html).*
 
 ## License
 
