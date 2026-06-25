@@ -7,6 +7,7 @@
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends Node
 
 ## File path to the default cue registry resource.

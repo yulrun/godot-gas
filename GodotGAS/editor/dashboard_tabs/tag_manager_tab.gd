@@ -8,6 +8,7 @@
 ## @meta_license: MIT
 
 @tool
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends Control
 
 ## File path to the default tag registry resource.

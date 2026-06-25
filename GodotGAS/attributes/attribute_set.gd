@@ -7,6 +7,7 @@
 ## @meta_license: MIT
 
 @tool @abstract
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name AttributeSet extends Resource
 
 

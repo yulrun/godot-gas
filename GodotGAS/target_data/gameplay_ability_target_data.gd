@@ -7,6 +7,7 @@
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayAbilityTargetData extends RefCounted
 
 ## Array of strictly unique target nodes captured by the ability.

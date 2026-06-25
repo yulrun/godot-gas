@@ -6,6 +6,7 @@
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayEffectModifier extends Resource
 
 ## Defines the mathematical operation applied to the attribute.

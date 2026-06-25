@@ -8,6 +8,7 @@
 ## @meta_license: MIT
 
 @tool
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayTagGenerator extends RefCounted
 
 ## The target file path where the generated tag constants script will be saved.

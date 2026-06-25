@@ -8,6 +8,7 @@
 ## @meta_license: MIT
 
 @tool
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name AttributeData extends Resource
 
 ## The permanent, unbuffed stat (e.g., your naked Max Health).

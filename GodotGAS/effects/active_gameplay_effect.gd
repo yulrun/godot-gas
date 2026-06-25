@@ -7,6 +7,7 @@
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name ActiveGameplayEffect extends RefCounted
 
 ## The live, wrapped instance of the effect being applied.

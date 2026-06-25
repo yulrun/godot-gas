@@ -7,6 +7,7 @@
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayEffectContext extends RefCounted
 
 ## The overarching entity that activated the ability (e.g., the Player Character).

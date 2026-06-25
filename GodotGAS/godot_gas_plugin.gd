@@ -8,6 +8,7 @@
 ## @meta_license: MIT
 
 @tool
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends EditorPlugin
 
 ## Name of the global cue manager singleton.

@@ -5,6 +5,7 @@
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayEffectSpec extends RefCounted
 
 ## The static data definition (your existing Resource).

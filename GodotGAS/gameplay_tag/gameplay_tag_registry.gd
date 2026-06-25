@@ -8,6 +8,7 @@
 ## @meta_license: MIT
 
 @tool
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayTagRegistry extends Resource
 
 ## The master list of all registered tags in the project.

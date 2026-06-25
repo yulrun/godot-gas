@@ -8,6 +8,7 @@
 ## @meta_license: MIT
 
 @abstract
+@icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayAbility extends Node
 
 ## Fired when the ability finishes.
