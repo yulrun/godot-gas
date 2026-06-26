@@ -46,9 +46,9 @@ signal ability_ended(was_cancelled: bool)
 ## Usually handled automatically by UI Action Bars calling ASC.bind_ability_to_input().
 @export var input_id: int = -1
 
-## Temporarily holds the event data (like TargetData) if this ability was triggered by an event.
-## Your ability script can access this during _activate_ability().
-var current_event_payload: GameplayEffectContext
+## Temporarily holds the payload if this ability was activated via an event.
+## This can be a GameplayEffectSpec, a Dictionary, or a Godot Node!
+var current_event_payload: Variant
 
 ## A reference to the AbilitySystemComponent that owns this ability.
 var owner_asc: AbilitySystemComponent

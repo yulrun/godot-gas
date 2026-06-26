@@ -26,7 +26,7 @@ signal attribute_changed(attribute_name: String, old_value: float, new_value: fl
 signal effect_applied_to_target(target_asc: AbilitySystemComponent, spec: GameplayEffectSpec)
 
 ## Fired anytime we receive a gameplay_event
-signal gameplay_event_received(event_tag: StringName, payload: GameplayEffectContext)
+signal gameplay_event_received(event_tag: StringName, payload: Variant)
 
 ## Fired when a Duration or Infinite effect is successfully applied to this ASC.
 ## The UI uses this to start Cooldown Sweeps or display Buff/Debuff Icons.
@@ -650,16 +650,16 @@ func ability_local_input_released(input_id: int) -> void:
 func _trigger_effect_events(spec: GameplayEffectSpec) -> void:
 	# 1. Trigger static events defined by the designer in the Inspector
 	for event_tag in spec.effect_def.event_tags:
-		send_gameplay_event(event_tag, spec.context)
+		send_gameplay_event(event_tag, spec)
 		
 	# 2. Trigger dynamic events injected by Execution Calculations!
 	for dynamic_tag in spec.dynamic_tags:
-		send_gameplay_event(dynamic_tag, spec.context)
+		send_gameplay_event(dynamic_tag, spec)
 
 
 ## Sends a global event to this ASC. If any granted abilities are listening for this tag, 
 ## they will attempt to activate and receive the payload.
-func send_gameplay_event(event_tag: StringName, payload: GameplayEffectContext = null) -> void:
+func send_gameplay_event(event_tag: StringName, payload: Variant = null) -> void:
 	if event_tag == "":
 		return
 	
@@ -670,7 +670,10 @@ func send_gameplay_event(event_tag: StringName, payload: GameplayEffectContext =
 	for ability in _active_abilities:
 		if ability.trigger_event_tag == event_tag:
 			# The ability was listening for this! Try to activate it and pass the data.
-			ability.try_activate(payload)
+			if payload is GameplayEffectContext:
+				ability.try_activate(payload)
+			elif payload is GameplayEffectSpec:
+				ability.try_activate(payload.context)
 #endregion
 
 

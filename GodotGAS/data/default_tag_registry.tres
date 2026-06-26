@@ -4,5 +4,5 @@
 
 [resource]
 script = ExtResource("1_hekpq")
-tags = Array[StringName]([&"Example.Ability.Arrow.Impact", &"Example.Ability.Arrow.Shoot", &"Example.Ability.Heal.Triggered", &"Example.Ability.Poison.Applied", &"Example.Ability.Poison.Cast", &"Example.Event.Damage.Critical", &"Example.Event.Damage.Missed", &"Example.Event.Defend.Hit", &"Example.State.Cooldown.Arrow", &"Example.State.Cooldown.Poison"])
+tags = Array[StringName]([&"Example.Ability.Arrow.Impact", &"Example.Ability.Arrow.Shoot", &"Example.Ability.Heal.Triggered", &"Example.Ability.Poison.Applied", &"Example.Ability.Poison.Cast", &"Example.Event.Damage.Critical", &"Example.Event.Damage.Missed", &"Example.Event.Damage.Normal", &"Example.Event.Defend.Hit", &"Example.State.Cooldown.Arrow", &"Example.State.Cooldown.Poison"])
 metadata/_custom_type_script = "uid://capxhrkjcf32t"
