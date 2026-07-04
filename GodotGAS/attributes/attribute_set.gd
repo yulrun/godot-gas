@@ -18,4 +18,10 @@ class_name AttributeSet extends Resource
 func pre_attribute_change(attribute_name: String, proposed_value: float) -> float:
 	# By default, we just allow the value to pass through unchanged
 	return proposed_value
+
+
+## Called by the ASC right AFTER an attribute's current_value is modified.
+## Useful for reacting to max/min limit changes (e.g., MaxHealth dropping below Health).
+func post_attribute_change(asc: Node, attribute_name: String, old_value: float, new_value: float) -> void:
+	pass
 #endregion

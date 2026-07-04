@@ -668,7 +668,35 @@ func _on_generate_script_pressed() -> void:
 		script_text += "\t\t_:\n"
 		script_text += "\t\t\tpass\n"
 	
-	script_text += "\n\treturn proposed_value\n"
+	script_text += "\n\treturn proposed_value\n\n\n"
+	
+	# Post-Attribute Change Pipeline (Handles Moving Goalposts)
+	script_text += "## The reaction pipeline: Handles moving goalposts (e.g. MaxHealth dropping below Health).\n"
+	script_text += "func post_attribute_change(asc: Node, attribute_name: String, old_value: float, new_value: float) -> void:\n"
+	script_text += "\tmatch attribute_name:\n"
+	
+	var has_post_match = false
+	for key in valid_attributes:
+		# We look for base attributes (like 'health') to see if they have min/max pairs
+		if not "max_" in key.to_lower() and not "min_" in key.to_lower():
+			var max_k = "max_" + key
+			var min_k = "min_" + key
+			
+			if max_k in valid_attributes:
+				script_text += "\t\t\"%s\":\n" % max_k
+				script_text += "\t\t\tif %s.current_value > new_value:\n" % key
+				script_text += "\t\t\t\tasc._apply_attribute_change(\"%s\", new_value - %s.current_value)\n" % [key, key]
+				has_post_match = true
+				
+			if min_k in valid_attributes:
+				script_text += "\t\t\"%s\":\n" % min_k
+				script_text += "\t\t\tif %s.current_value < new_value:\n" % key
+				script_text += "\t\t\t\tasc._apply_attribute_change(\"%s\", new_value - %s.current_value)\n" % [key, key]
+				has_post_match = true
+				
+	if not has_post_match:
+		script_text += "\t\t_:\n"
+		script_text += "\t\t\tpass\n"
 
 	# Write to Disk
 	var file = FileAccess.open(file_path, FileAccess.WRITE)

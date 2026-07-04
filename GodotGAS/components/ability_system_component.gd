@@ -288,6 +288,8 @@ func _apply_attribute_change(attribute_name: String, amount: float, spec: Gamepl
 					attr.current_value = final_value
 					attribute_changed.emit(attribute_name, old_value, final_value, spec)
 					
+					set.post_attribute_change(self, attribute_name, old_value, final_value)
+					
 				return actual_delta
 				
 	push_warning("GodotGAS: Attempted to modify '%s', but the ASC does not possess that attribute." % attribute_name)
