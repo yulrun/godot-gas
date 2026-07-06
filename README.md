@@ -2,7 +2,7 @@
   <img src="./GodotGAS/icons/godot_gas_logo_small.png" alt="GodotGAS Logo">
 </div>
 
-[☕ Buy me a Coffee!](https://ko-fi.com/yulrundev) 
+[☕ Buy me a Coffee!](https://ko-fi.com/yulrundev)
 
 # GodotGAS
 **A Production-Ready Gameplay Ability System for Godot 4.6+**
