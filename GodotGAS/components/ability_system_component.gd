@@ -294,6 +294,32 @@ func _apply_attribute_change(attribute_name: String, amount: float, spec: Gamepl
 				
 	push_warning("GodotGAS: Attempted to modify '%s', but the ASC does not possess that attribute." % attribute_name)
 	return 0.0
+
+
+## Takes a strongly-typed dictionary of {"attribute_name": override_value} and dynamically
+## generates an Initialization Effect to safely apply them through the GAS pipeline.
+func initialize_attribute_overrides(overrides: Dictionary[String, float]) -> void:
+	if overrides.is_empty():
+		return
+		
+	# Dynamically generate an Instant Effect
+	var init_effect: GameplayEffect = GameplayEffect.new()
+	init_effect.policy = GameplayEffect.DurationPolicy.INSTANT
+	
+	# Build the OVERRIDE modifiers based on the user's dictionary
+	for attr_name: String in overrides.keys():
+		var modifier: GameplayEffectModifier = GameplayEffectModifier.new()
+		modifier.attribute_name = attr_name
+		modifier.operation = GameplayEffectModifier.Operation.OVERRIDE
+		modifier.magnitude = overrides[attr_name]
+		init_effect.modifiers.append(modifier)
+		
+	# Create Context and Spec (Passing the instigator directly into the constructor)
+	var context: GameplayEffectContext = GameplayEffectContext.new(self.get_parent())
+	var spec: GameplayEffectSpec = GameplayEffectSpec.new(init_effect, context)
+	
+	# Apply to self (This routes through the clamps and fires UI signals!)
+	apply_effect_spec(spec)
 #endregion
 
 
