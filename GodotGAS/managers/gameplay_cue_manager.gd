@@ -70,7 +70,9 @@ func execute_cue(tag: StringName, target: Node, payload: Dictionary = {}) -> voi
 func _get_or_create_cue(tag: StringName) -> GameplayCueNotify:
 	# 1. Try to grab an existing dormant cue from the pool
 	if _pool.has(tag) and _pool[tag].size() > 0:
-		return _pool[tag].pop_back()
+		var pooled_cue = _pool[tag].pop_back()
+		_set_cue_state(pooled_cue, true) # FIX: WAKE THE CUE UP!
+		return pooled_cue
 		
 	# 2. If the pool is empty, instance a brand new one
 	var raw_instance = _cue_scenes[tag].instantiate()
