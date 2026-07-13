@@ -73,53 +73,53 @@ func _exit_tree() -> void:
 #region Virtual Overrides
 ## Automatically validates this property if a tag is deleted globally.
 func _on_registry_changed() -> void:
-	var object = get_edited_object()
-	if not is_instance_valid(object) or not _registry: 
-		return
-	
-	var prop_name = get_edited_property()
-	var val = object.get(prop_name)
-	var did_change = false
-	
-	if val is Array:
-		# Duplicate the array to preserve Godot's strict typing
-		var new_val = val.duplicate()
-		var original_size = new_val.size()
-		
-		# Iterate backwards when removing items from an array
-		for i in range(new_val.size() - 1, -1, -1):
-			if not _registry.has_tag(StringName(new_val[i])):
-				new_val.remove_at(i)
-				
-		if new_val.size() != original_size:
-			_current_tags = new_val.duplicate()
-			emit_changed(prop_name, _current_tags)
-			did_change = true
-			
-	elif val is StringName or val is String:
-		var t_str = String(val)
-		if not t_str.is_empty() and not _registry.has_tag(StringName(t_str)):
-			_current_tags.clear()
-			emit_changed(prop_name, StringName(""))
-			did_change = true
-			
-	# If this specific inspector row lost a tag, update its text instantly
-	if did_change:
-		_button.text = "Tags (%d selected)" % _current_tags.size()
+    var object = get_edited_object()
+    if not is_instance_valid(object) or not _registry:
+        return
+    
+    var prop_name = get_edited_property()
+    var val = object.get(prop_name)
+    var did_change = false
+    
+    if val is Array or val is PackedStringArray:
+        var new_val = val.duplicate()
+        var original_size = new_val.size()
+        
+        # Iterate backwards when removing items from an array
+        for i in range(new_val.size() - 1, -1, -1):
+            if not _registry.has_tag(StringName(new_val[i])):
+                new_val.remove_at(i)
+                
+        if new_val.size() != original_size:
+            _current_tags = Array(new_val)
+            emit_changed(prop_name, _current_tags if val is Array else PackedStringArray(_current_tags))
+            did_change = true
+            
+    elif val is StringName or val is String:
+        var t_str = String(val)
+        if not t_str.is_empty() and not _registry.has_tag(StringName(t_str)):
+            _current_tags.clear()
+            emit_changed(prop_name, StringName(""))
+            did_change = true
+            
+    # If this specific inspector row lost a tag, update its text instantly
+    if did_change:
+        _button.text = "Tags (%d selected)" % _current_tags.size()
 
 
 ## Synchronizes the UI with the inspected object's data.
 func _update_property() -> void:
-	var val = get_edited_object().get(get_edited_property())
-	if val is Array:
-		_current_tags = val.duplicate()
-	elif val is StringName or val is String:
-		_current_tags = [val] if not String(val).is_empty() else []
-	
-	_button.text = "Tags (%d selected)" % _current_tags.size()
-	
-	if is_instance_valid(_popup) and _popup.visible and not _is_updating_from_tree:
-		_refresh_tree()
+    var val = get_edited_object().get(get_edited_property())
+    
+    if val is Array or val is PackedStringArray:
+        _current_tags = Array(val) # Safely cast to standard Array for internal UI tracking
+    elif val is StringName or val is String:
+        _current_tags = [val] if not String(val).is_empty() else []
+    
+    _button.text = "Tags (%d selected)" % _current_tags.size()
+    
+    if is_instance_valid(_popup) and _popup.visible and not _is_updating_from_tree:
+        _refresh_tree()
 #endregion
 
 
@@ -223,52 +223,57 @@ func _refresh_tree() -> void:
 
 
 func _on_tree_item_edited() -> void:
-	var item = _tree.get_edited()
-	if not item: 
-		return
-	
-	var tag_path = StringName(item.get_metadata(0))
-	var is_checked = item.is_checked(0)
-	
-	_is_updating_from_tree = true
-	
-	var prop_type = get_edited_object().get(get_edited_property())
-	if prop_type is Array:
-		if is_checked and not _current_tags.has(tag_path):
-			_current_tags.append(tag_path)
-		elif not is_checked and _current_tags.has(tag_path):
-			_current_tags.erase(tag_path)
-		emit_changed(get_edited_property(), _current_tags)
-	else:
-		if is_checked:
-			emit_changed(get_edited_property(), tag_path)
-		else:
-			emit_changed(get_edited_property(), StringName(""))
-			
-		if is_instance_valid(_popup):
-			_popup.hide()
-			_popup.queue_free.call_deferred()
-			
-	_is_updating_from_tree = false
+    var item = _tree.get_edited()
+    if not item:
+        return
+    
+    var tag_path = StringName(item.get_metadata(0))
+    var is_checked = item.is_checked(0)
+    
+    _is_updating_from_tree = true
+    
+    var prop_type = get_edited_object().get(get_edited_property())
+    if prop_type is Array or prop_type is PackedStringArray:
+        if is_checked and not _current_tags.has(tag_path):
+            _current_tags.append(tag_path)
+        elif not is_checked and _current_tags.has(tag_path):
+            _current_tags.erase(tag_path)
+            
+        emit_changed(get_edited_property(), _current_tags if prop_type is Array else PackedStringArray(_current_tags))
+    else:
+        if is_checked:
+            emit_changed(get_edited_property(), tag_path)
+        else:
+            emit_changed(get_edited_property(), StringName(""))
+            
+        if is_instance_valid(_popup):
+            _popup.hide()
+            _popup.queue_free.call_deferred()
+            
+    _is_updating_from_tree = false
 
 
 func _on_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
-	if id == 1: 
-		var tag_to_remove = StringName(item.get_metadata(0))
-		
-		var prop_type = get_edited_object().get(get_edited_property())
-		if prop_type is Array and _current_tags.has(tag_to_remove):
-			_current_tags.erase(tag_to_remove)
-			emit_changed(get_edited_property(), _current_tags)
-		elif not prop_type is Array and _current_tags.size() > 0 and _current_tags[0] == tag_to_remove:
-			_current_tags.clear() 
-			emit_changed(get_edited_property(), StringName(""))
-		
-		_button.text = "Tags (%d selected)" % _current_tags.size()
-		
-		_registry.remove_tag(tag_to_remove)
-		_set_status("Deleted tag: " + tag_to_remove, true)
-		_refresh_tree()
+    if id != 1:
+        return
+
+    var tag_to_remove = StringName(item.get_metadata(0))
+    var prop_type = get_edited_object().get(get_edited_property())
+    var is_array_type = prop_type is Array or prop_type is PackedStringArray
+    
+    if is_array_type and _current_tags.has(tag_to_remove):
+        _current_tags.erase(tag_to_remove)
+        emit_changed(get_edited_property(), _current_tags if prop_type is Array else PackedStringArray(_current_tags))
+        
+    elif not is_array_type and _current_tags.size() > 0 and _current_tags[0] == tag_to_remove:
+        _current_tags.clear()
+        emit_changed(get_edited_property(), StringName(""))
+    
+    _button.text = "Tags (%d selected)" % _current_tags.size()
+    
+    _registry.remove_tag(tag_to_remove)
+    _set_status("Deleted tag: " + tag_to_remove, true)
+    _refresh_tree()
 
 
 func _on_add_custom_tag() -> void:

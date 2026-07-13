@@ -24,13 +24,16 @@ func _can_handle(object: Object) -> bool:
 
 ## Native Godot virtual that intercepts property rendering to inject custom UI.
 func _parse_property(object: Object, type: Variant.Type, name: String, hint_type: PropertyHint, hint_string: String, usage_flags: int, wide: bool) -> bool:
-	# We intercept Array[StringName] or StringName variables that contain the word 'tag'
-	if "tag" in name.to_lower():
-		if type == TYPE_ARRAY or type == TYPE_STRING_NAME or type == TYPE_STRING:
-			var editor_property = GameplayTagEditorProperty.new()
-			add_property_editor(name, editor_property)
-			
-			return true # Tells Godot to skip rendering the default input field
-			
-	return false
+    # We intercept arrays or strings containing the word 'tag'
+    if "tag" in name.to_lower():
+        match type:
+            TYPE_ARRAY, \
+            TYPE_PACKED_STRING_ARRAY, \
+            TYPE_STRING, \
+            TYPE_STRING_NAME:
+                var editor_property = GameplayTagEditorProperty.new()
+                add_property_editor(name, editor_property)
+                return true # Tells Godot to skip rendering the default input field
+            
+    return false
 #endregion
