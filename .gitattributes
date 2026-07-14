@@ -1,0 +1,9 @@
+# Exclude the images directory
+/github_images/               export-ignore
+
+# Exclude specific files
+/.gitignore                   export-ignore
+/.gitattributes               export-ignore
+/LICENSE                      export-ignore
+/README.md                    export-ignore
+/godot-gas-medium.png         export-ignore
