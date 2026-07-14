@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="godot-gas-medium.png" alt="GodotGAS Logo">
+  <img src="./github_images/godot-gas-medium.png" alt="GodotGAS Logo">
 </div>
 
 [☕ Buy me a Coffee!](https://ko-fi.com/yulrundev) | [Discord](https://discord.gg/bW5pvcdK5j)
