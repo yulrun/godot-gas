@@ -46,6 +46,10 @@ signal effect_received(source_asc: AbilitySystemComponent, spec: GameplayEffectS
 
 @export var attribute_sets: Array[AttributeSet] = []
 
+## If false, this ASC will create a unique deep copy of its attribute sets on start.
+## If true, it will share the exact resource memory with other entities (Unreal default is false).
+@export var share_attributes: bool = false
+
 @export var debug_signal_log: bool = false
 
 ## Array of integer IDs representing currently held inputs.
@@ -73,6 +77,14 @@ enum ActivationError {
 
 #region Core Virtuals
 func _ready() -> void:
+	# Enforce Memory Isolation (Unreal GAS Standard)
+	if not share_attributes:
+		for i in range(attribute_sets.size()):
+			if attribute_sets[i]:
+				# duplicate(true) ensures the internal AttributeData nodes are also cloned
+				attribute_sets[i] = attribute_sets[i].duplicate(true)
+	
+	# Debug Binding
 	if debug_signal_log:
 		tag_added.connect(_debug_tag_added)
 		tag_count_changed.connect(_debug_tag_count_changed)

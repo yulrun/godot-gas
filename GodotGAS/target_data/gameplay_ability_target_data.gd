@@ -79,6 +79,18 @@ func get_hits_for_node(node: Node) -> Array[Dictionary]:
 	return specific_hits
 
 
+## Forcefully excises a specific node from the payload tracking.
+## Extremely useful for Channeled/Aura abilities when a target physically leaves the Area3D.
+func force_remove_target(node: Node) -> void:
+	# Scrub the unique tracking array
+	_target_nodes.erase(node)
+	
+	# Scrub the raw hit dictionaries (Iterating backwards to prevent index shifting)
+	for i in range(_hit_results.size() - 1, -1, -1):
+		if _hit_results[i].get("collider") == node:
+			_hit_results.remove_at(i)
+
+
 ## Clears all payload data.
 func clear() -> void:
 	_target_nodes.clear()
