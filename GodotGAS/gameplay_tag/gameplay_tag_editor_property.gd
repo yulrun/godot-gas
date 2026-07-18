@@ -82,17 +82,21 @@ func _on_registry_changed() -> void:
 	var did_change = false
 	
 	if val is Array or val is PackedStringArray:
-		var new_val = val.duplicate()
-		var original_size = new_val.size()
+		# Enforce strict typing during validation purges
+		var new_typed_array: Array[StringName] = []
+		if val != null:
+			new_typed_array.assign(val)
+			
+		var original_size = new_typed_array.size()
 		
 		# Iterate backwards when removing items from an array
-		for i in range(new_val.size() - 1, -1, -1):
-			if not _registry.has_tag(StringName(new_val[i])):
-				new_val.remove_at(i)
+		for i in range(new_typed_array.size() - 1, -1, -1):
+			if not _registry.has_tag(StringName(new_typed_array[i])):
+				new_typed_array.remove_at(i)
 				
-		if new_val.size() != original_size:
-			_current_tags = Array(new_val)
-			emit_changed(prop_name, _current_tags if val is Array else PackedStringArray(_current_tags))
+		if new_typed_array.size() != original_size:
+			_current_tags = Array(new_typed_array)
+			emit_changed(prop_name, new_typed_array if val is Array else PackedStringArray(new_typed_array))
 			did_change = true
 			
 	elif val is StringName or val is String:
@@ -232,14 +236,24 @@ func _on_tree_item_edited() -> void:
 	
 	_is_updating_from_tree = true
 	
-	var prop_type = get_edited_object().get(get_edited_property())
-	if prop_type is Array or prop_type is PackedStringArray:
-		if is_checked and not _current_tags.has(tag_path):
-			_current_tags.append(tag_path)
-		elif not is_checked and _current_tags.has(tag_path):
-			_current_tags.erase(tag_path)
+	var prop_val = get_edited_object().get(get_edited_property())
+	if prop_val is Array or prop_val is PackedStringArray:
+		# 1. CREATE STRICTLY TYPED ARRAY (Breaks memory link & fixes save bug!)
+		var new_typed_array: Array[StringName] = []
+		
+		# 2. Copy the existing data safely
+		if prop_val != null:
+			new_typed_array.assign(prop_val)
 			
-		emit_changed(get_edited_property(), _current_tags if prop_type is Array else PackedStringArray(_current_tags))
+		# 3. Apply the changes
+		if is_checked and not new_typed_array.has(tag_path):
+			new_typed_array.append(tag_path)
+		elif not is_checked and new_typed_array.has(tag_path):
+			new_typed_array.erase(tag_path)
+			
+		# 4. Sync UI tracking and emit the perfectly typed data
+		_current_tags = Array(new_typed_array)
+		emit_changed(get_edited_property(), new_typed_array if prop_val is Array else PackedStringArray(new_typed_array))
 	else:
 		if is_checked:
 			emit_changed(get_edited_property(), tag_path)
@@ -258,12 +272,20 @@ func _on_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_
 		return
 
 	var tag_to_remove = StringName(item.get_metadata(0))
-	var prop_type = get_edited_object().get(get_edited_property())
-	var is_array_type = prop_type is Array or prop_type is PackedStringArray
+	var prop_val = get_edited_object().get(get_edited_property())
+	var is_array_type = prop_val is Array or prop_val is PackedStringArray
 	
-	if is_array_type and _current_tags.has(tag_to_remove):
-		_current_tags.erase(tag_to_remove)
-		emit_changed(get_edited_property(), _current_tags if prop_type is Array else PackedStringArray(_current_tags))
+	if is_array_type:
+		# Break memory link with strictly typed array
+		var new_typed_array: Array[StringName] = []
+		if prop_val != null:
+			new_typed_array.assign(prop_val)
+			
+		if new_typed_array.has(tag_to_remove):
+			new_typed_array.erase(tag_to_remove)
+			
+		_current_tags = Array(new_typed_array)
+		emit_changed(get_edited_property(), new_typed_array if prop_val is Array else PackedStringArray(new_typed_array))
 		
 	elif not is_array_type and _current_tags.size() > 0 and _current_tags[0] == tag_to_remove:
 		_current_tags.clear()
