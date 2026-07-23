@@ -712,6 +712,12 @@ func send_gameplay_event(event_tag: StringName, payload: Variant = null) -> void
 				ability.try_activate(payload)
 			elif payload is GameplayEffectSpec:
 				ability.try_activate(payload.context)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		# The node is being destroyed in memory. Clean up timers, orphaned effects, and array references!
+		cleanup()
 #endregion
 
 
