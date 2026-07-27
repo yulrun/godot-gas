@@ -276,10 +276,10 @@ func get_attribute(attribute_name: String) -> AttributeData:
 
 
 ## Helper function to determine if a AttributeData resource exists.
-func has_attribute(attribtue_name: String) -> bool:
+func has_attribute(attribute_name: String) -> bool:
 	for set in attribute_sets:
-		if attribtue_name in set:
-			if set.get(attribtue_name) is AttributeData:
+		if attribute_name in set:
+			if set.get(attribute_name) is AttributeData:
 				return true
 	return false
 
