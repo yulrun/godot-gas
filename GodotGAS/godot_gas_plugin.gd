@@ -31,13 +31,16 @@ var _tag_inspector: EditorInspectorPlugin
 
 
 #region Plugin Lifecycle
-## Called when the plugin is activated or enters the editor tree.
+## Called when the plugin is activated.
+func _enable_plugin() -> void:
+	# Auto-register the Singleton so the user doesn't have to
+	add_autoload_singleton(CUE_MANAGER_NAME, CUE_MANAGER_PATH)
+
+
+## Called when the plugin enters the editor tree.
 func _enter_tree() -> void:
 	_tag_inspector = GameplayTagInspectorPlugin.new()
 	add_inspector_plugin(_tag_inspector)
-	
-	# Auto-register the Singleton so the user doesn't have to
-	add_autoload_singleton(CUE_MANAGER_NAME, CUE_MANAGER_PATH)
 	
 	_dashboard_instance = DASHBOARD_SCENE.instantiate()
 	_dashboard_instance.visible = false
@@ -47,13 +50,16 @@ func _enter_tree() -> void:
 	print("GodotGAS: Framework Initialized.")
 
 
-## Called when the plugin is deactivated or leaves the editor tree.
+## Called when the plugin is deactivated.
+func _disable_plugin() -> void:
+	# Clean up the Singleton when the plugin is disabled.
+	remove_autoload_singleton(CUE_MANAGER_NAME)
+
+
+## Called when the plugin leaves the editor tree.
 func _exit_tree() -> void:
 	if _tag_inspector:
 		remove_inspector_plugin(_tag_inspector)
-		
-	# Clean up the Singleton when the plugin is disabled
-	remove_autoload_singleton(CUE_MANAGER_NAME)
 	
 	if _dashboard_instance:
 		_dashboard_instance.queue_free()
