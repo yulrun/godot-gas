@@ -3,7 +3,7 @@
 ## Intercepts exported properties containing the word 'tag' and replaces 
 ## their default inspector UI with the custom GameplayTagEditorProperty.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

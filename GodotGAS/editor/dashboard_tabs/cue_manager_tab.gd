@@ -3,7 +3,7 @@
 ## Provides a UI to associate visual/audio scenes with specific tags,
 ## storing these mappings in the global cue registry.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

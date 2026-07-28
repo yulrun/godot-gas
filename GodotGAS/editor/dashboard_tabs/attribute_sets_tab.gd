@@ -3,7 +3,7 @@
 ## Provides a UI for creating attribute categories, defining default values,
 ## assigning icons, and compiling the configuration into GDScript files.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
@@ -312,7 +312,13 @@ func _on_set_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_but
 			counter += 1
 			
 		for key in _drafts.get_section_keys(set_name):
-			_drafts.set_value(new_name, key, _drafts.get_value(set_name, key))
+			var val = _drafts.get_value(set_name, key)
+			
+			# Force deep copies of any data structures to isolate the new set!
+			if typeof(val) == TYPE_DICTIONARY or typeof(val) == TYPE_ARRAY:
+				val = val.duplicate(true)
+				
+			_drafts.set_value(new_name, key, val)
 			
 		_drafts.save(DRAFTS_PATH)
 		_refresh_set_tree()
@@ -470,6 +476,11 @@ func _on_attribute_tree_button_clicked(item: TreeItem, column: int, id: int, mou
 			counter += 1
 			
 		var data_dict = _drafts.get_value(_current_set, attr_name)
+		
+		# Force a deep copy of the dictionary to break the memory link!
+		if typeof(data_dict) == TYPE_DICTIONARY:
+			data_dict = data_dict.duplicate(true)
+			
 		_drafts.set_value(_current_set, new_name, data_dict)
 		_drafts.save(DRAFTS_PATH)
 		_refresh_attribute_tree()
@@ -487,11 +498,14 @@ func _on_icon_popup_id_pressed(id: int) -> void:
 		return
 	
 	var chosen_icon_name = _icon_names_map[id]
-	var data_dict = _drafts.get_value(_current_set, _editing_icon_attr)
+	var raw_data = _drafts.get_value(_current_set, _editing_icon_attr)
 	
-	# Safety net
-	if typeof(data_dict) != TYPE_DICTIONARY:
-		data_dict = {"value": float(data_dict), "icon": "Attribute"}
+	# [FIX]: Duplicate the dictionary to break the memory reference!
+	var data_dict: Dictionary
+	if typeof(raw_data) == TYPE_DICTIONARY:
+		data_dict = raw_data.duplicate(true)
+	else:
+		data_dict = {"value": float(raw_data), "icon": "Attribute"}
 		
 	data_dict["icon"] = chosen_icon_name
 	_drafts.set_value(_current_set, _editing_icon_attr, data_dict)
@@ -509,11 +523,15 @@ func _on_attribute_tree_item_edited() -> void:
 		return
 	
 	var old_name = item.get_metadata(0)
-	var data_dict = _drafts.get_value(_current_set, old_name)
+	var raw_data = _drafts.get_value(_current_set, old_name)
 	
-	# Safety catch in case it hasn't been migrated yet
-	if typeof(data_dict) != TYPE_DICTIONARY:
-		data_dict = {"value": float(data_dict), "icon": "Attribute"}
+	# [FIX]: Duplicate the dictionary to break the memory reference.
+	# This forces Godot's ConfigFile to realize a change actually occurred!
+	var data_dict: Dictionary
+	if typeof(raw_data) == TYPE_DICTIONARY:
+		data_dict = raw_data.duplicate(true)
+	else:
+		data_dict = {"value": float(raw_data), "icon": "Attribute"}
 	
 	if col == 0: # Renamed the attribute
 		var new_name = item.get_text(0).strip_edges().to_snake_case()
@@ -619,7 +637,7 @@ func _on_generate_script_pressed() -> void:
 	# Build GDScript String
 	var script_text = "## An extended class for the attribute module: %s \n" %_current_set
 	script_text += "##\n"
-	script_text += "## @meta_addon: GodotGAS 1.0\n"
+	script_text += "## @meta_addon: GodotGAS 1.0.5\n"
 	script_text += "## @meta_author: YulRun (https://YulRun.Dev) & 'Your Name Here'\n"
 	script_text += "## @meta_license: MIT (Default)\n\n"
 	script_text += "@tool\nclass_name " + _current_set + "AttributeSet extends AttributeSet\n\n"

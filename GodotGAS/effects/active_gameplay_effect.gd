@@ -3,7 +3,7 @@
 ## Manages the state, duration, and periodic ticks of an active effect,
 ## while recording applied modifiers so they can be safely reversed.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

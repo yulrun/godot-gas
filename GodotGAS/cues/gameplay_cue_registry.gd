@@ -3,7 +3,7 @@
 ## Used by the global GameplayCueManager to look up which PackedScene 
 ## should be instantiated or pooled when a specific cue tag is executed.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

@@ -3,7 +3,7 @@
 ## Holds both the permanent base value and the temporary current value of an 
 ## attribute, automatically syncing the current value when the base is updated.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

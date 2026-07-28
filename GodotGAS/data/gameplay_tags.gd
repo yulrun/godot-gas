@@ -2,7 +2,7 @@
 ##
 ## Used for accessing StringName references to Gameplay Tags in Scripts.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

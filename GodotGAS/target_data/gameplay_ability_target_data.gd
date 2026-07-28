@@ -3,7 +3,7 @@
 ## Stores hit results and unique target nodes, providing a standardized
 ## payload that can be passed safely to GameplayEffects.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

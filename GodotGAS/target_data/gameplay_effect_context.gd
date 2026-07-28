@@ -3,7 +3,7 @@
 ## Wraps the instigator, causer, and TargetData into a single object 
 ## to be passed safely through the execution pipeline.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

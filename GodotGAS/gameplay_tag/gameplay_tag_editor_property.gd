@@ -3,7 +3,7 @@
 ## Displays a button in the inspector that opens a dedicated tag editor 
 ## popup window, allowing users to assign, create, or delete tags.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

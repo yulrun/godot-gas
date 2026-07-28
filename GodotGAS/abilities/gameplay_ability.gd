@@ -3,7 +3,7 @@
 ## Defines the core execution logic, input routing, and effect application 
 ## pipelines for an ability. Intended to be extended by specific ability scripts.
 ##
-## @meta_addon: GodotGAS 1.0
+## @meta_addon: GodotGAS 1.0.5
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
