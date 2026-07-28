@@ -11,16 +11,17 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name GameplayTagGenerator extends RefCounted
 
-## The target file path where the generated tag constants script will be saved.
-const GENERATED_FILE_PATH = "res://addons/GodotGAS/data/gameplay_tags.gd"
+## Addon project settings.
+const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 
 #region Code Generation
 ## Takes an array of tags and writes a static class file with constants for IDE autocomplete.
 static func generate_tags_file(tags: Array[StringName]) -> void:
-	var file = FileAccess.open(GENERATED_FILE_PATH, FileAccess.WRITE)
+	var generated_tag_script_path: = GodotGasProjectSettings.get_generated_tag_script_path()
+	var file = FileAccess.open(generated_tag_script_path, FileAccess.WRITE)
 	if not file:
-		printerr("GodotGAS: Failed to open path for tag generation: ", GENERATED_FILE_PATH)
+		printerr("GodotGAS: Failed to open path for tag generation: ", generated_tag_script_path)
 		return
 
 	# Write standard header warning so users don't manually edit it

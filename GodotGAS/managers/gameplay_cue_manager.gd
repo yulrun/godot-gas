@@ -10,8 +10,8 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends Node
 
-## File path to the default cue registry resource.
-const REGISTRY_PATH = "res://addons/GodotGAS/data/default_cue_registry.tres"
+## Addon project settings.
+const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 ## Internal dictionary holding the object pool. Format: { "tag": [GameplayCueNotify, ...] }
 var _pool: Dictionary = {}
@@ -28,11 +28,13 @@ func _ready() -> void:
 
 ## Loads the cue registry from disk and prepares the object pool.
 func _load_registry() -> void:
-	if not ResourceLoader.exists(REGISTRY_PATH):
-		push_warning("GodotGAS: No cue registry found at " + REGISTRY_PATH)
+	var cue_registry_path: = GodotGasProjectSettings.get_registry_cue_path()
+	if not ResourceLoader.exists(cue_registry_path):
+		if not Engine.is_editor_hint() or EditorInterface.is_plugin_enabled("GodotGAS"):
+			push_warning("GodotGAS: No cue registry found at " + cue_registry_path)
 		return
 		
-	var registry = load(REGISTRY_PATH) as GameplayCueRegistry
+	var registry = load(cue_registry_path) as GameplayCueRegistry
 	if not registry:
 		return
 		

@@ -23,6 +23,9 @@ const DASHBOARD_SCENE = preload("res://addons/GodotGAS/editor/godot_gas_dashboar
 ## Preloaded script for the tag inspector plugin.
 const GameplayTagInspectorPlugin = preload("res://addons/GodotGAS/gameplay_tag/gameplay_tag_inspector_plugin.gd")
 
+## Preloaded scripts for the plugin project settings.
+const GodotGasProjectSettings = preload("res://addons/GodotGAS/utilities/project_settings.gd")
+
 ## Reference to the active dashboard control node in the editor.
 var _dashboard_instance: Control
 
@@ -33,12 +36,14 @@ var _tag_inspector: EditorInspectorPlugin
 #region Plugin Lifecycle
 ## Called when the plugin is activated.
 func _enable_plugin() -> void:
-	# Auto-register the Singleton so the user doesn't have to
+ # Auto-register the Singleton so the user doesn't have to
 	add_autoload_singleton(CUE_MANAGER_NAME, CUE_MANAGER_PATH)
 
 
 ## Called when the plugin enters the editor tree.
 func _enter_tree() -> void:
+	GodotGasProjectSettings.init_project_settings()
+
 	_tag_inspector = GameplayTagInspectorPlugin.new()
 	add_inspector_plugin(_tag_inspector)
 	

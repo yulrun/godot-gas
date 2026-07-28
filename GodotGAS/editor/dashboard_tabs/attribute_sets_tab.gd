@@ -11,11 +11,8 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends Control
 
-## The file path where attribute drafts are saved.
-const DRAFTS_PATH = "res://addons/GodotGAS/data/attribute_drafts.cfg"
-
-## The default directory for generated attribute scripts.
-const DEFAULT_OUTPUT_DIR = "res://gas_attributes"
+## Addon project settings.
+const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 ## Icon for Attribute Set categories.
 const SET_ICON = preload("res://addons/GodotGAS/icons/godot_gas_attributes.svg")
@@ -43,9 +40,6 @@ var _drafts: ConfigFile = ConfigFile.new()
 
 ## The name of the currently selected Attribute Set.
 var _current_set: String = ""
-
-## The directory path where the generated script will be saved.
-var _output_dir: String = DEFAULT_OUTPUT_DIR
 
 ## The popup dialog used for configuring generation settings.
 var _settings_dialog: ConfirmationDialog
@@ -98,9 +92,6 @@ var _text_accent: Color
 ## Reference to the label displaying the currently selected set.
 @onready var _lbl_selected_set: Label = %LblSelectedSet
 
-## Reference to the settings button.
-@onready var _btn_settings: Button = %BtnSettings
-
 ## Reference to the tree node displaying attributes for the selected set.
 @onready var _attribute_tree: Tree = %AttributeTree
 
@@ -132,9 +123,7 @@ func _ready() -> void:
 
 ## Loads the saved draft data and settings.
 func _load_drafts() -> void:
-	if _drafts.load(DRAFTS_PATH) == OK:
-		# Load custom directory if it exists, otherwise use default
-		_output_dir = _drafts.get_value("Settings", "output_dir", DEFAULT_OUTPUT_DIR)
+	_drafts.load(GodotGasProjectSettings.get_attributes_draft_config_path())
 
 
 ## Binds all signals and constructs the dynamic dialogs.
@@ -143,7 +132,6 @@ func _setup_ui() -> void:
 	_btn_create_set.pressed.connect(_on_create_set_pressed)
 	_btn_add_attribute.pressed.connect(_on_add_attribute_pressed)
 	_btn_generate_script.pressed.connect(_on_generate_script_pressed)
-	_btn_settings.pressed.connect(_on_settings_pressed)
 	
 	_new_attribute_input.text_submitted.connect(func(_t): _on_add_attribute_pressed())
 	_new_set_input.text_submitted.connect(func(_t): _on_create_set_pressed())
@@ -212,62 +200,7 @@ func _setup_ui() -> void:
 	_error_dialog.title = "Action Failed"
 	add_child(_error_dialog)
 
-	# Build Settings Dialog
-	_btn_settings.icon = get_theme_icon("Tools", "EditorIcons")
-	
-	_settings_dialog = ConfirmationDialog.new()
-	_settings_dialog.title = "Attribute Set Settings"
-	_settings_dialog.confirmed.connect(_on_settings_saved)
-
-	var vbox = VBoxContainer.new()
-	var hbox = HBoxContainer.new()
-	
-	_dir_label = LineEdit.new()
-	_dir_label.editable = false
-	_dir_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	var btn_browse = Button.new()
-	btn_browse.text = "Browse..."
-	btn_browse.pressed.connect(func(): _dir_dialog.popup_file_dialog())
-	btn_browse.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	var btn_reset = Button.new()
-	btn_reset.text = "Reset Default"
-	btn_reset.pressed.connect(func(): _dir_label.text = DEFAULT_OUTPUT_DIR)
-	btn_reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	hbox.add_child(btn_browse)
-	hbox.add_child(btn_reset)
-	var label = Label.new()
-	label.text = "Script Output Directory: "
-	vbox.add_child(label)
-	vbox.add_child(_dir_label)
-	vbox.add_child(hbox)
-	_settings_dialog.add_child(vbox)
-	add_child(_settings_dialog)
-	
-	_dir_dialog = EditorFileDialog.new()
-	_dir_dialog.file_mode = EditorFileDialog.FILE_MODE_OPEN_DIR
-	_dir_dialog.dir_selected.connect(func(dir): _dir_label.text = dir)
-	add_child(_dir_dialog)
-	
 	_update_right_panel_state()
-#endregion
-
-
-#region Settings Logic
-## Triggered when the settings icon is clicked.
-func _on_settings_pressed() -> void:
-	_dir_label.text = _output_dir
-	_settings_dialog.popup_centered(Vector2i(450, 0))
-
-
-## Triggered when the user confirms changes in the settings dialog.
-func _on_settings_saved() -> void:
-	_output_dir = _dir_label.text
-	_drafts.set_value("Settings", "output_dir", _output_dir)
-	_drafts.save(DRAFTS_PATH)
-	print("GodotGAS: Output directory updated to ", _output_dir)
 #endregion
 
 
@@ -320,7 +253,7 @@ func _on_set_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_but
 				
 			_drafts.set_value(new_name, key, val)
 			
-		_drafts.save(DRAFTS_PATH)
+		_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 		_refresh_set_tree()
 		
 	elif id == TreeBtn.DELETE:
@@ -356,7 +289,7 @@ func _on_set_tree_item_edited() -> void:
 	for key in _drafts.get_section_keys(old_name):
 		_drafts.set_value(new_name, key, _drafts.get_value(old_name, key))
 	_drafts.erase_section(old_name)
-	_drafts.save(DRAFTS_PATH)
+	_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 	
 	item.set_metadata(0, new_name)
 	item.set_text(0, new_name) # Ensure pascal_case reflects
@@ -386,8 +319,8 @@ func _on_create_set_pressed() -> void:
 		return
 		
 	if not _drafts.has_section(set_name):
-		_drafts.set_value(set_name, "_initialized", true) 
-		_drafts.save(DRAFTS_PATH)
+		_drafts.set_value(set_name, "_initialized", true)
+		_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 		_new_set_input.text = ""
 		_current_set = set_name
 		_refresh_set_tree()
@@ -482,7 +415,7 @@ func _on_attribute_tree_button_clicked(item: TreeItem, column: int, id: int, mou
 			data_dict = data_dict.duplicate(true)
 			
 		_drafts.set_value(_current_set, new_name, data_dict)
-		_drafts.save(DRAFTS_PATH)
+		_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 		_refresh_attribute_tree()
 		
 	elif id == TreeBtn.DELETE:
@@ -509,7 +442,7 @@ func _on_icon_popup_id_pressed(id: int) -> void:
 		
 	data_dict["icon"] = chosen_icon_name
 	_drafts.set_value(_current_set, _editing_icon_attr, data_dict)
-	_drafts.save(DRAFTS_PATH)
+	_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 	
 	_editing_icon_attr = "" # Clear state
 	_refresh_attribute_tree()
@@ -549,14 +482,14 @@ func _on_attribute_tree_item_edited() -> void:
 		_drafts.set_value(_current_set, new_name, data_dict)
 		item.set_metadata(0, new_name)
 		item.set_text(0, new_name) # Ensure snake_case reflects
-		_drafts.save(DRAFTS_PATH)
+		_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 		
 	elif col == 1: # Changed the default value
 		var new_val = item.get_text(1).to_float()
 		item.set_text(1, str(new_val)) # Visually clean formatting
 		data_dict["value"] = new_val
 		_drafts.set_value(_current_set, old_name, data_dict)
-		_drafts.save(DRAFTS_PATH)
+		_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 
 
 ## Triggered when adding a brand new attribute to the set.
@@ -578,7 +511,7 @@ func _on_add_attribute_pressed() -> void:
 	var data_dict = {"value": val, "icon": icon_name}
 	
 	_drafts.set_value(_current_set, attr_name, data_dict)
-	_drafts.save(DRAFTS_PATH)
+	_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 	
 	_new_attribute_input.text = ""
 	_new_attribute_value.value = 0.0
@@ -593,13 +526,13 @@ func _execute_delete() -> void:
 		_drafts.erase_section(_delete_target_name)
 		if _current_set == _delete_target_name:
 			_current_set = ""
-		_drafts.save(DRAFTS_PATH)
+		_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 		_refresh_set_tree()
 		_refresh_attribute_tree()
 		
 	elif _delete_target_type == "attribute":
 		_drafts.erase_section_key(_current_set, _delete_target_name)
-		_drafts.save(DRAFTS_PATH)
+		_drafts.save(GodotGasProjectSettings.get_attributes_draft_config_path())
 		_refresh_attribute_tree()
 		
 	_delete_target_type = ""
@@ -613,8 +546,9 @@ func _on_generate_script_pressed() -> void:
 	if _current_set == "": 
 		return
 	
+	var output_dir: = GodotGasProjectSettings.get_attributes_output_dir_path()
 	var file_name = _current_set.to_snake_case() + "_attribute_set.gd"
-	var file_path = _output_dir + "/" + file_name
+	var file_path = output_dir.path_join(file_name)
 	
 	# SAFEGUARD: Check if the script is open in the Editor
 	var script_editor = EditorInterface.get_script_editor()
@@ -628,8 +562,8 @@ func _on_generate_script_pressed() -> void:
 			return
 
 	# Ensure directory exists
-	if not DirAccess.dir_exists_absolute(_output_dir):
-		var err = DirAccess.make_dir_recursive_absolute(_output_dir)
+	if not DirAccess.dir_exists_absolute(output_dir):
+		var err = DirAccess.make_dir_recursive_absolute(output_dir)
 		if err != OK:
 			push_error("GodotGAS: Failed to create output directory. Error: ", err)
 			return

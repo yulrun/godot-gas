@@ -11,11 +11,8 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends Control
 
-## File path to the default cue registry resource.
-const REGISTRY_PATH = "res://addons/GodotGAS/data/default_cue_registry.tres"
-
-## File path to the default tag registry resource.
-const TAG_REGISTRY_PATH = "res://addons/GodotGAS/data/default_tag_registry.tres"
+## Addon project settings.
+const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 ## Icon used to represent gameplay tags.
 const TAG_ICON = preload("res://addons/GodotGAS/icons/godot_gas_tags.svg")
@@ -100,10 +97,11 @@ func _ready() -> void:
 
 ## Loads the cue registry from disk.
 func _load_registry() -> void:
-	if ResourceLoader.exists(REGISTRY_PATH):
-		_registry = load(REGISTRY_PATH) as GameplayCueRegistry
+	var cue_registry_path: = GodotGasProjectSettings.get_registry_cue_path()
+	if ResourceLoader.exists(cue_registry_path):
+		_registry = load(cue_registry_path) as GameplayCueRegistry
 	else:
-		push_warning("GodotGAS: Cue Registry not found at " + REGISTRY_PATH)
+		push_warning("GodotGAS: Cue Registry not found at " + cue_registry_path)
 
 
 ## Wires up signals and instantiates the dynamic UI dialogs.
@@ -225,11 +223,12 @@ func _build_tag_tree(filter: String = "") -> void:
 	_tag_tree.clear()
 	var root = _tag_tree.create_item()
 	
-	if not ResourceLoader.exists(TAG_REGISTRY_PATH):
-		push_error("GodotGAS: Tag Registry not found at " + TAG_REGISTRY_PATH)
+	var tag_registry_path: = GodotGasProjectSettings.get_registry_tag_path()
+	if not ResourceLoader.exists(tag_registry_path):
+		push_error("GodotGAS: Tag Registry not found at " + tag_registry_path)
 		return
 		
-	var tag_registry = load(TAG_REGISTRY_PATH)
+	var tag_registry = load(tag_registry_path)
 	
 	# Create a list of currently mapped tags to grey them out
 	var taken_tags = []
@@ -316,7 +315,7 @@ func _on_add_mapping_pressed() -> void:
 		new_entry.scene = _draft_scene
 		_registry.entries.append(new_entry)
 		
-	ResourceSaver.save(_registry, REGISTRY_PATH)
+	ResourceSaver.save(_registry, GodotGasProjectSettings.get_registry_cue_path())
 	_reset_form()
 	
 	# Refresh using the current search bar text so the list doesn't visually reset
@@ -356,7 +355,7 @@ func _execute_delete() -> void:
 		return
 		
 	_registry.entries.remove_at(_delete_index)
-	ResourceSaver.save(_registry, REGISTRY_PATH)
+	ResourceSaver.save(_registry,  GodotGasProjectSettings.get_registry_cue_path())
 	
 	if _delete_index == _editing_index:
 		_reset_form()

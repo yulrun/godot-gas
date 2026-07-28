@@ -11,8 +11,8 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends Control
 
-## File path to the default tag registry resource.
-const TAG_REGISTRY_PATH = "res://addons/GodotGAS/data/default_tag_registry.tres"
+## Addon project settings.
+const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 ## Icon used to represent gameplay tags in the tree view.
 const TAG_ICON = preload("res://addons/GodotGAS/icons/godot_gas_tags.svg")
@@ -56,10 +56,12 @@ func _ready() -> void:
 
 ## Loads the tag registry from disk.
 func _load_registry() -> void:
-	if ResourceLoader.exists(TAG_REGISTRY_PATH):
-		_registry = load(TAG_REGISTRY_PATH) as GameplayTagRegistry
+	var tag_registry_path = GodotGasProjectSettings.get_registry_tag_path()
+	if ResourceLoader.exists(tag_registry_path):
+		_registry = load(tag_registry_path) as GameplayTagRegistry
 	else:
-		push_warning("GodotGAS: Tag Registry not found at " + TAG_REGISTRY_PATH)
+		if not Engine.is_editor_hint() or EditorInterface.is_plugin_enabled("GodotGAS"):
+			push_warning("GodotGAS: Tag Registry not found at " + tag_registry_path)
 
 
 ## Wires up signals and configures the initial UI state.
