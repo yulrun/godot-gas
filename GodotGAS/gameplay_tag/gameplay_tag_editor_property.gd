@@ -11,8 +11,8 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends EditorProperty
 
-## File path to the default tag registry resource.
-const REGISTRY_PATH = "res://addons/GodotGAS/data/default_tag_registry.tres"
+## Addon project settings.
+const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 ## The main button displayed in the inspector row.
 var _button := Button.new()
@@ -47,7 +47,7 @@ var _is_updating_from_tree: bool = false
 
 #region Initialization & Lifecycle
 func _init() -> void:
-	_registry = load(REGISTRY_PATH) as GameplayTagRegistry
+	_registry = load(GodotGasProjectSettings.get_registry_tag_path()) as GameplayTagRegistry
 	
 	_button.text = "Edit Tags..."
 	_button.clip_text = true
