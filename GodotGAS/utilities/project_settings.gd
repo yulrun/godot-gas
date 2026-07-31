@@ -200,3 +200,33 @@ static func _init_project_settings_editor_tag_property_editor() -> void:
 		"hint_string": "Prefix,Suffix,Anywhere",
 	})
 
+
+## Dynamically parses an SVG file in memory, replacing pure white/grey with the native Editor color.
+## Automatically scales the rasterized image to perfectly match the user's Editor UI Scale (e.g., 4K monitors).
+static func get_svg_icon(path: String) -> Texture2D:
+	if not Engine.is_editor_hint():
+		return load(path)
+		
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file: 
+		return load(path)
+	
+	var svg_text = file.get_as_text()
+	file.close()
+	
+	var theme = EditorInterface.get_editor_theme()
+	var font_color = "#" + theme.get_color("font_color", "Editor").to_html(false)
+	
+	svg_text = svg_text.replace("#e0e0e0", font_color)
+	svg_text = svg_text.replace("#E0E0E0", font_color)
+	svg_text = svg_text.replace("#ffffff", font_color)
+	svg_text = svg_text.replace("#FFFFFF", font_color)
+	
+	var img = Image.new()
+	var editor_scale = EditorInterface.get_editor_scale()
+	var err = img.load_svg_from_string(svg_text, editor_scale)
+	
+	if err == OK:
+		return ImageTexture.create_from_image(img)
+		
+	return load(path)

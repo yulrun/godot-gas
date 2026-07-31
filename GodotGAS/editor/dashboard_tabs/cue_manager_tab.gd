@@ -59,6 +59,12 @@ var _delete_confirm_dialog: ConfirmationDialog
 ## The generated system accent color for active UI elements.
 var _sys_accent: String
 
+## In-memory styles used to override panels natively to prevent dirtying .tres files
+var _base_panel_style: StyleBoxFlat
+var _dark_panel_style: StyleBoxFlat
+var _header_panel_style: StyleBoxFlat
+var _list_item_style: StyleBoxFlat
+
 ## Reference to the search filter input field.
 @onready var _search_bar: LineEdit = %SearchFilter
 
@@ -87,6 +93,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		_load_registry()
 		_setup_ui()
+		_sync_theme_colors()
 		_refresh_cue_list()
 		_reset_form()
 		
@@ -104,6 +111,15 @@ func _load_registry() -> void:
 		push_warning("GodotGAS: Cue Registry not found at " + cue_registry_path)
 
 
+## Receives Godot Engine broadcasts, allowing us to seamlessly update colors if the user changes themes.
+func _notification(what: int) -> void:
+	if what == Control.NOTIFICATION_THEME_CHANGED:
+		if Engine.is_editor_hint() and is_node_ready():
+			_sync_theme_colors()
+			var filter_text = _search_bar.text if _search_bar else ""
+			_refresh_cue_list(filter_text)
+
+
 ## Wires up signals and instantiates the dynamic UI dialogs.
 func _setup_ui() -> void:
 	# Connect Form Buttons
@@ -113,7 +129,12 @@ func _setup_ui() -> void:
 	
 	_btn_cancel.pressed.connect(_reset_form)
 	_btn_cancel.icon = get_theme_icon("Close", "EditorIcons")
-	_sys_accent = (DisplayServer.get_accent_color() + (Color.WHITE * 0.25)).to_html(false)
+	
+	# Fetch theme colors and apply styling
+	_sync_theme_colors()
+	
+	if _cue_list_vbox:
+		_cue_list_vbox.add_theme_constant_override("separation", 8)
 	
 	# Build the Scene Browser Dialog
 	_scene_dialog = EditorFileDialog.new()
@@ -159,6 +180,81 @@ func _setup_ui() -> void:
 	
 	_tag_dialog.add_child(_tag_tree_vbox)
 	add_child(_tag_dialog)
+
+
+## Synchronizes internal color variables and generates dynamic StyleBoxes to match the Editor Theme.
+func _sync_theme_colors() -> void:
+	if not Engine.is_editor_hint(): return
+	var editor_theme = EditorInterface.get_editor_theme()
+	if not editor_theme: return
+	
+	var editor_accent = editor_theme.get_color("accent_color", "Editor")
+	var base_color = editor_theme.get_color("base_color", "Editor")
+	var dark_color = editor_theme.get_color("dark_color_1", "Editor")
+	
+	var is_dark_theme = base_color.get_luminance() < 0.5
+	var header_color = base_color.lightened(0.08) if is_dark_theme else base_color.darkened(0.08)
+	var list_item_color = dark_color.lightened(0.05) if is_dark_theme else dark_color.darkened(0.05)
+	
+	# Fallback safeguard in case theme is completely unloaded during a hot-reload
+	if base_color == Color(0, 0, 0, 1) and dark_color == Color(0, 0, 0, 1):
+		return
+		
+	_sys_accent = editor_accent.to_html(false)
+	
+	if not _base_panel_style:
+		_base_panel_style = StyleBoxFlat.new()
+		_base_panel_style.set_content_margin_all(5)
+		_base_panel_style.set_corner_radius_all(5)
+		
+	if not _dark_panel_style:
+		_dark_panel_style = StyleBoxFlat.new()
+		_dark_panel_style.set_content_margin_all(5)
+		_dark_panel_style.set_corner_radius_all(5)
+		
+	if not _header_panel_style:
+		_header_panel_style = StyleBoxFlat.new()
+		_header_panel_style.set_content_margin_all(5)
+		_header_panel_style.set_corner_radius_all(8)
+
+	if not _list_item_style:
+		_list_item_style = StyleBoxFlat.new()
+		_list_item_style.set_content_margin_all(8)
+		_list_item_style.set_corner_radius_all(8)
+		
+	_base_panel_style.bg_color = base_color
+	_dark_panel_style.bg_color = dark_color
+	_header_panel_style.bg_color = header_color
+	_list_item_style.bg_color = list_item_color
+	
+	_apply_panel_colors(self)
+	
+	# Safely apply to the parent TabContainer (Delayed by 1 frame so parent can initialize)
+	if get_parent() is TabContainer:
+		get_parent().set_tab_icon.call_deferred(get_index(), GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_cues.svg"))
+
+
+## Traverses the UI tree to identify PanelContainers by their .tres assignment and applies the local StyleBox override.
+func _apply_panel_colors(node: Node) -> void:
+	if node is PanelContainer:
+		if not node.has_meta("panel_type"):
+			var style = node.get_theme_stylebox("panel")
+			if style and style.resource_path != "":
+				if "editor_panel_flat_style_dark" in style.resource_path:
+					node.set_meta("panel_type", "dark")
+				elif "editor_panel_flat_style" in style.resource_path:
+					node.set_meta("panel_type", "base")
+					
+		if node.has_meta("panel_type"):
+			if node.get_meta("panel_type") == "base":
+				node.add_theme_stylebox_override("panel", _base_panel_style)
+			elif node.get_meta("panel_type") == "dark":
+				node.add_theme_stylebox_override("panel", _dark_panel_style)
+			elif node.get_meta("panel_type") == "header":
+				node.add_theme_stylebox_override("panel", _header_panel_style)
+				
+	for child in node.get_children():
+		_apply_panel_colors(child)
 #endregion
 
 
@@ -229,6 +325,8 @@ func _build_tag_tree(filter: String = "") -> void:
 		return
 		
 	var tag_registry = load(tag_registry_path)
+	var editor_theme = EditorInterface.get_editor_theme()
+	var disabled_color = editor_theme.get_color("disabled_font_color", "Editor")
 	
 	# Create a list of currently mapped tags to grey them out
 	var taken_tags = []
@@ -269,12 +367,12 @@ func _build_tag_tree(filter: String = "") -> void:
 		# Now 'current' is the leaf node. Disable it if already mapped.
 		if tag_name in taken_tags:
 			current.set_selectable(0, false)
-			current.set_custom_color(0, Color.DIM_GRAY)
+			current.set_custom_color(0, disabled_color)
 			current.set_tooltip_text(0, "Tag already mapped to a Cue")
 		else:
 			# Store the full tag string so we can retrieve it easily
 			current.set_icon(0, TAG_ICON)
-			current.set_custom_color(0, _sys_accent)
+			current.set_custom_color(0, Color(_sys_accent))
 			var part: String = current.get_text(0)
 			current.set_text(0, part + " (" + tag_name + ")")
 			current.set_metadata(0, tag_name)
@@ -402,19 +500,44 @@ func _refresh_cue_list(filter: String = "") -> void:
 		# Grab the original index so Edit/Delete affect the actual array, not the filtered position
 		var original_index = _registry.entries.find(entry)
 		
+		# --- NEW: Beautiful Card Background ---
+		var card = PanelContainer.new()
+		card.add_theme_stylebox_override("panel", _list_item_style)
+		
 		var row = HBoxContainer.new()
+		card.add_child(row)
+		
+		# --- NEW: VBox Wrapper to force perfect vertical centering ---
+		var lbl_vbox = VBoxContainer.new()
+		lbl_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		
 		var lbl = RichTextLabel.new()
+		lbl.bbcode_enabled = true
+		lbl.fit_content = true
+		lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+		lbl.add_theme_stylebox_override("normal", StyleBoxEmpty.new()) # Destroys the faint editor background
 		
 		var tag_name = entry.tag if entry.tag else "No Tag Assigned"
 		var scene_name = entry.scene.resource_path.get_file() if entry.scene else "No Scene Assigned"
 		var scene_path = entry.scene.resource_path if entry.scene else "No Scene Assigned"
 		
-		lbl.bbcode_enabled = true
-		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL 
-		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		var tag_icon: String = "[img]%s[/img]" % TAG_ICON.resource_path
-		var scene_icon: String = "[img]%s[/img]" % SCENE_ICON.resource_path
+		# Fetch the exact hex string of Godot's native font color
+		var editor_theme = EditorInterface.get_editor_theme()
+		var icon_color_hex = editor_theme.get_color("font_color", "Editor").to_html(false)
+		
+		# Multiply Godot's standard 16px icon size by the user's monitor UI scale
+		var icon_size = int(16 * EditorInterface.get_editor_scale())
+		
+		# Use the strict Godot 4 BBCode syntax (width=X height=Y color=#HEX)
+		var tag_icon: String = "[img width=%d height=%d color=#%s]%s[/img]" % [icon_size, icon_size, icon_color_hex, TAG_ICON.resource_path]
+		var scene_icon: String = "[img width=%d height=%d color=#%s]%s[/img]" % [icon_size, icon_size, icon_color_hex, SCENE_ICON.resource_path]
+		
 		lbl.text = tag_icon + " [color=" + _sys_accent + "][b]" + str(tag_name) + "[/b][/color] [i]executes [b]→[/b][/i] " + scene_icon + " [color=" + _sys_accent + "][b]" + scene_name + "[/b][/color] [i](" + scene_path + ")[/i]"
+		
+		# Parent everything up
+		lbl_vbox.add_child(lbl)
+		row.add_child(lbl_vbox)
 		
 		var edit_btn = Button.new()
 		edit_btn.icon = get_theme_icon("Edit", "EditorIcons")
@@ -424,13 +547,8 @@ func _refresh_cue_list(filter: String = "") -> void:
 		del_btn.icon = get_theme_icon("Remove", "EditorIcons")
 		del_btn.pressed.connect(_on_delete_pressed.bind(original_index))
 		
-		row.add_child(lbl)
 		row.add_child(edit_btn)
 		row.add_child(del_btn)
-		_cue_list_vbox.add_child(row)
 		
-		if i < entries_to_show.size() - 1:
-			var separator = HSeparator.new()
-			separator.add_theme_constant_override("separation", 8) 
-			_cue_list_vbox.add_child(separator)
+		_cue_list_vbox.add_child(card)
 #endregion

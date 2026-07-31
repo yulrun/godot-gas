@@ -15,7 +15,7 @@ extends Control
 const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 ## Icon used to represent gameplay tags in the tree view.
-const TAG_ICON = preload("res://addons/GodotGAS/icons/godot_gas_tags.svg")
+var _tag_icon: Texture2D
 
 ## Reference to the active global tag registry resource.
 var _registry: GameplayTagRegistry
@@ -28,6 +28,11 @@ var _tag_to_delete: StringName = ""
 
 ## The generated system accent color for active UI elements.
 var _sys_accent: String
+
+## In-memory styles used to override panels natively to prevent dirtying .tres files
+var _base_panel_style: StyleBoxFlat
+var _dark_panel_style: StyleBoxFlat
+var _header_panel_style: StyleBoxFlat
 
 ## Reference to the search filter input field.
 @onready var _search_bar: LineEdit = %SearchTagFilter
@@ -51,6 +56,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		_load_registry()
 		_setup_ui()
+		_sync_theme_colors()
 		_refresh_tag_tree()
 
 
@@ -62,6 +68,14 @@ func _load_registry() -> void:
 	else:
 		if not Engine.is_editor_hint() or EditorInterface.is_plugin_enabled("GodotGAS"):
 			push_warning("GodotGAS: Tag Registry not found at " + tag_registry_path)
+
+
+## Receives Godot Engine broadcasts, allowing us to seamlessly update colors if the user changes themes.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED:
+		if Engine.is_editor_hint() and is_node_ready():
+			_sync_theme_colors()
+			_refresh_tag_tree()
 
 
 ## Wires up signals and configures the initial UI state.
@@ -79,7 +93,8 @@ func _setup_ui() -> void:
 	# Allow hitting 'Enter' in the text box to add the tag
 	_new_tag_input.text_submitted.connect(func(_text): _on_add_tag_pressed()) 
 	
-	_sys_accent = (DisplayServer.get_accent_color() + (Color.WHITE * 0.25)).to_html(false)
+	# Fetch theme colors and apply styling
+	_sync_theme_colors()
 	
 	if _search_bar:
 		_search_bar.text_changed.connect(_on_search_changed)
@@ -88,6 +103,76 @@ func _setup_ui() -> void:
 	_delete_confirm_dialog = ConfirmationDialog.new()
 	_delete_confirm_dialog.confirmed.connect(_execute_delete)
 	add_child(_delete_confirm_dialog)
+
+
+## Synchronizes internal color variables and generates dynamic StyleBoxes to match the Editor Theme.
+func _sync_theme_colors() -> void:
+	if not Engine.is_editor_hint(): return
+	var editor_theme = EditorInterface.get_editor_theme()
+	if not editor_theme: return
+	
+	var editor_accent = editor_theme.get_color("accent_color", "Editor")
+	var base_color = editor_theme.get_color("base_color", "Editor")
+	var dark_color = editor_theme.get_color("dark_color_1", "Editor")
+	var is_dark_theme = base_color.get_luminance() < 0.5
+	var header_color = base_color.lightened(0.08) if is_dark_theme else base_color.darkened(0.08)
+	
+	# Fallback safeguard in case theme is completely unloaded during a hot-reload
+	if base_color == Color(0, 0, 0, 1) and dark_color == Color(0, 0, 0, 1):
+		return
+		
+	_sys_accent = editor_accent.to_html(false)
+	
+	if not _base_panel_style:
+		_base_panel_style = StyleBoxFlat.new()
+		_base_panel_style.set_content_margin_all(5)
+		_base_panel_style.set_corner_radius_all(5)
+		
+	if not _dark_panel_style:
+		_dark_panel_style = StyleBoxFlat.new()
+		_dark_panel_style.set_content_margin_all(5)
+		_dark_panel_style.set_corner_radius_all(5)
+		
+	if not _header_panel_style:
+		_header_panel_style = StyleBoxFlat.new()
+		_header_panel_style.set_content_margin_all(5)
+		_header_panel_style.set_corner_radius_all(8)
+		
+	_base_panel_style.bg_color = base_color
+	_dark_panel_style.bg_color = dark_color
+	_header_panel_style.bg_color = header_color
+	
+	_apply_panel_colors(self)
+	
+	# Fetch dynamic icon
+	_tag_icon = GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_tags.svg")
+	
+	# Safely apply to the parent TabContainer (Delayed by 1 frame so parent can initialize)
+	if get_parent() is TabContainer:
+		get_parent().set_tab_icon.call_deferred(get_index(), _tag_icon)
+
+
+## Traverses the UI tree to identify PanelContainers by their .tres assignment and applies the local StyleBox override.
+func _apply_panel_colors(node: Node) -> void:
+	if node is PanelContainer:
+		if not node.has_meta("panel_type"):
+			var style = node.get_theme_stylebox("panel")
+			if style and style.resource_path != "":
+				if "editor_panel_flat_style_dark" in style.resource_path:
+					node.set_meta("panel_type", "dark")
+				elif "editor_panel_flat_style" in style.resource_path:
+					node.set_meta("panel_type", "base")
+					
+		if node.has_meta("panel_type"):
+			if node.get_meta("panel_type") == "base":
+				node.add_theme_stylebox_override("panel", _base_panel_style)
+			elif node.get_meta("panel_type") == "dark":
+				node.add_theme_stylebox_override("panel", _dark_panel_style)
+			elif node.get_meta("panel_type") == "header":
+				node.add_theme_stylebox_override("panel", _header_panel_style)
+				
+	for child in node.get_children():
+		_apply_panel_colors(child)
 #endregion
 
 
@@ -107,8 +192,10 @@ func _refresh_tag_tree() -> void:
 		
 	var filter = _search_bar.text.to_lower() if _search_bar else ""
 
-	# Get Trash Icon
+	# Get Icons and Colors natively from Editor
 	var trash_icon = get_theme_icon("Remove", "EditorIcons")
+	var editor_theme = EditorInterface.get_editor_theme()
+	var accent_color = editor_theme.get_color("accent_color", "Editor")
 
 	for tag_name in _registry.tags:
 		var tag_str = String(tag_name)
@@ -142,8 +229,8 @@ func _refresh_tag_tree() -> void:
 				
 			# If this is the final part of the tag (the leaf)
 			if i == parts.size() - 1:
-				current.set_icon(0, TAG_ICON)
-				current.set_custom_color(0, _sys_accent)
+				current.set_icon(0, _tag_icon)
+				current.set_custom_color(0, accent_color)
 				current.set_metadata(0, tag_str)
 				current.set_text(0, part + " (" + tag_name + ")")
 				

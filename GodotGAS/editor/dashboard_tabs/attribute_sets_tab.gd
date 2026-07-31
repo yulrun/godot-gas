@@ -15,13 +15,13 @@ extends Control
 const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
 ## Icon for Attribute Set categories.
-const SET_ICON = preload("res://addons/GodotGAS/icons/godot_gas_attributes.svg")
+var _set_icon: Texture2D
 
 ## Default icon for an individual attribute.
-const DEFAULT_ATTR_ICON = preload("res://addons/GodotGAS/icons/godot_gas_icon_star.svg")
+var _default_attr_icon: Texture2D
 
 ## Icon used for the inline edit action.
-const EDIT_ICON_ICON = preload("res://addons/GodotGAS/icons/godot_gas_icon_edit.svg")
+var _edit_icon_icon: Texture2D
 
 ## A dictionary mapping available attribute icon names to their resource paths.
 const ATTR_ICONS = {
@@ -80,6 +80,11 @@ var _selected_box: StyleBoxFlat
 ## The generated accent color used for text highlighting.
 var _text_accent: Color
 
+## In-memory styles used to override panels natively to prevent dirtying .tres files
+var _base_panel_style: StyleBoxFlat
+var _dark_panel_style: StyleBoxFlat
+var _header_panel_style: StyleBoxFlat
+
 ## Reference to the tree node displaying Attribute Sets.
 @onready var _set_tree: Tree = %SetTree
 
@@ -117,6 +122,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		_load_drafts()
 		_setup_ui()
+		_sync_theme_colors()
 		_refresh_set_tree()
 		_refresh_attribute_tree()
 
@@ -124,6 +130,17 @@ func _ready() -> void:
 ## Loads the saved draft data and settings.
 func _load_drafts() -> void:
 	_drafts.load(GodotGasProjectSettings.get_attributes_draft_config_path())
+
+
+## Receives Godot Engine broadcasts, allowing us to seamlessly update colors if the user changes themes.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED:
+		if Engine.is_editor_hint() and is_node_ready():
+			_sync_theme_colors()
+			if _selected_box:
+				_selected_box.bg_color = _text_accent * Color(1, 1, 1, 0.25)
+			_refresh_set_tree()
+			_refresh_attribute_tree()
 
 
 ## Binds all signals and constructs the dynamic dialogs.
@@ -152,11 +169,11 @@ func _setup_ui() -> void:
 	_icon_popup.id_pressed.connect(_on_icon_popup_id_pressed)
 	add_child(_icon_popup)
 
-	# Coloring & Styling
-	_text_accent = DisplayServer.get_accent_color() + (Color.WHITE * 0.25)
-	_sys_accent = _text_accent.darkened(0.75).to_html(false)
+	# Fetch theme colors and apply styling
+	_sync_theme_colors()
+	
 	_selected_box = StyleBoxFlat.new()
-	_selected_box.bg_color = Color(_sys_accent)
+	_selected_box.bg_color = _text_accent * Color(1, 1, 1, 0.25)
 	_selected_box.set_content_margin_all(15)
 	_selected_box.set_corner_radius_all(5)
 
@@ -201,6 +218,77 @@ func _setup_ui() -> void:
 	add_child(_error_dialog)
 
 	_update_right_panel_state()
+
+
+## Synchronizes internal color variables and generates dynamic StyleBoxes to match the Editor Theme.
+func _sync_theme_colors() -> void:
+	if not Engine.is_editor_hint(): return
+	var editor_theme = EditorInterface.get_editor_theme()
+	if not editor_theme: return
+	
+	var editor_accent = editor_theme.get_color("accent_color", "Editor")
+	var base_color = editor_theme.get_color("base_color", "Editor")
+	var dark_color = editor_theme.get_color("dark_color_1", "Editor")
+	var is_dark_theme = base_color.get_luminance() < 0.5
+	var header_color = base_color.lightened(0.08) if is_dark_theme else base_color.darkened(0.08)
+	
+	# Fallback safeguard in case theme is completely unloaded during a hot-reload
+	if base_color == Color(0, 0, 0, 1) and dark_color == Color(0, 0, 0, 1):
+		return
+		
+	_sys_accent = editor_accent.to_html(false)
+	
+	if not _base_panel_style:
+		_base_panel_style = StyleBoxFlat.new()
+		_base_panel_style.set_content_margin_all(5)
+		_base_panel_style.set_corner_radius_all(5)
+		
+	if not _dark_panel_style:
+		_dark_panel_style = StyleBoxFlat.new()
+		_dark_panel_style.set_content_margin_all(5)
+		_dark_panel_style.set_corner_radius_all(5)
+		
+	if not _header_panel_style:
+		_header_panel_style = StyleBoxFlat.new()
+		_header_panel_style.set_content_margin_all(5)
+		_header_panel_style.set_corner_radius_all(8)
+		
+	_base_panel_style.bg_color = base_color
+	_dark_panel_style.bg_color = dark_color
+	_header_panel_style.bg_color = header_color
+	
+	_apply_panel_colors(self)
+	
+	_set_icon = GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_attributes.svg")
+	_default_attr_icon = GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_icon_star.svg")
+	_edit_icon_icon = GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_icon_edit.svg")
+	
+	# Safely apply to the parent TabContainer (Delayed by 1 frame so parent can initialize)
+	if get_parent() is TabContainer:
+		get_parent().set_tab_icon.call_deferred(get_index(), _set_icon)
+
+
+## Traverses the UI tree to identify PanelContainers by their .tres assignment and applies the local StyleBox override.
+func _apply_panel_colors(node: Node) -> void:
+	if node is PanelContainer:
+		if not node.has_meta("panel_type"):
+			var style = node.get_theme_stylebox("panel")
+			if style and style.resource_path != "":
+				if "editor_panel_flat_style_dark" in style.resource_path:
+					node.set_meta("panel_type", "dark")
+				elif "editor_panel_flat_style" in style.resource_path:
+					node.set_meta("panel_type", "base")
+					
+		if node.has_meta("panel_type"):
+			if node.get_meta("panel_type") == "base":
+				node.add_theme_stylebox_override("panel", _base_panel_style)
+			elif node.get_meta("panel_type") == "dark":
+				node.add_theme_stylebox_override("panel", _dark_panel_style)
+			elif node.get_meta("panel_type") == "header":
+				node.add_theme_stylebox_override("panel", _header_panel_style)
+				
+	for child in node.get_children():
+		_apply_panel_colors(child)
 #endregion
 
 
@@ -216,7 +304,7 @@ func _refresh_set_tree() -> void:
 		
 		var item = _set_tree.create_item(root)
 		item.set_text(0, set_name)
-		item.set_icon(0, SET_ICON)
+		item.set_icon(0, _set_icon)
 		item.set_metadata(0, set_name)
 		item.set_editable(0, false)
 		
@@ -380,14 +468,14 @@ func _refresh_attribute_tree() -> void:
 		if ATTR_ICONS.has(icon_key):
 			item.set_icon(0, ATTR_ICONS[icon_key])
 		else:
-			item.set_icon(0, DEFAULT_ATTR_ICON) # Safely catches legacy "Attribute" references
+			item.set_icon(0, _default_attr_icon) # Safely catches legacy "Attribute" references
 		
 		# Value Column (1)
 		item.set_text(1, str(val))
 		item.set_editable(1, true)
 		item.set_custom_color(1, _text_accent)
 		
-		item.add_button(1, EDIT_ICON_ICON, TreeBtn.CHANGE_ICON, false, "Change Icon")
+		item.add_button(1, _edit_icon_icon, TreeBtn.CHANGE_ICON, false, "Change Icon")
 		item.add_button(1, get_theme_icon("ActionCopy", "EditorIcons"), TreeBtn.DUPLICATE, false, "Duplicate Attribute")
 		item.add_button(1, get_theme_icon("Remove", "EditorIcons"), TreeBtn.DELETE, false, "Delete Attribute")
 
@@ -433,7 +521,7 @@ func _on_icon_popup_id_pressed(id: int) -> void:
 	var chosen_icon_name = _icon_names_map[id]
 	var raw_data = _drafts.get_value(_current_set, _editing_icon_attr)
 	
-	# [FIX]: Duplicate the dictionary to break the memory reference!
+	# Duplicate the dictionary to break the memory reference!
 	var data_dict: Dictionary
 	if typeof(raw_data) == TYPE_DICTIONARY:
 		data_dict = raw_data.duplicate(true)
@@ -458,7 +546,7 @@ func _on_attribute_tree_item_edited() -> void:
 	var old_name = item.get_metadata(0)
 	var raw_data = _drafts.get_value(_current_set, old_name)
 	
-	# [FIX]: Duplicate the dictionary to break the memory reference.
+	# Duplicate the dictionary to break the memory reference.
 	# This forces Godot's ConfigFile to realize a change actually occurred!
 	var data_dict: Dictionary
 	if typeof(raw_data) == TYPE_DICTIONARY:

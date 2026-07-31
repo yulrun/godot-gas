@@ -36,7 +36,7 @@ var _tag_inspector: EditorInspectorPlugin
 #region Plugin Lifecycle
 ## Called when the plugin is activated.
 func _enable_plugin() -> void:
- # Auto-register the Singleton so the user doesn't have to
+	# Auto-register the Singleton so the user doesn't have to
 	add_autoload_singleton(CUE_MANAGER_NAME, CUE_MANAGER_PATH)
 
 
@@ -86,7 +86,7 @@ func _get_plugin_name() -> String:
 
 ## Returns the icon displayed next to the plugin name on the main screen tab.
 func _get_plugin_icon() -> Texture2D:
-	return preload("res://addons/GodotGAS/icons/godot_gas.svg")
+	return GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas.svg")
 
 
 ## Called when the user toggles the main screen tab visibility.

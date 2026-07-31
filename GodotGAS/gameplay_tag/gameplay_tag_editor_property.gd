@@ -69,7 +69,6 @@ func _exit_tree() -> void:
 #endregion
 
 
-
 #region Virtual Overrides
 ## Automatically validates this property if a tag is deleted globally.
 func _on_registry_changed() -> void:
@@ -320,8 +319,9 @@ func _on_add_custom_tag() -> void:
 func _set_status(message: String, is_success: bool) -> void:
 	if is_instance_valid(_status_label):
 		_status_label.text = message
+		var editor_theme = EditorInterface.get_editor_theme()
 		if is_success:
-			_status_label.add_theme_color_override("font_color", Color.GREEN_YELLOW)
+			_status_label.add_theme_color_override("font_color", editor_theme.get_color("success_color", "Editor"))
 		else:
-			_status_label.add_theme_color_override("font_color", Color.LIGHT_CORAL)
+			_status_label.add_theme_color_override("font_color", editor_theme.get_color("error_color", "Editor"))
 #endregion
