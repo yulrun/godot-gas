@@ -13,7 +13,8 @@ class_name GameplayEffect extends Resource
 enum DurationPolicy { 
 	INSTANT, # Applies math immediately and vanishes. Cannot grant tags. (e.g., Fireball Damage)
 	DURATION, # Applies math/tags for X seconds, then undoes them. (e.g., 5-second Poison)
-	INFINITE # Applies math/tags permanently until explicitly removed. (e.g., Equipped Ring) 
+	INFINITE, # Applies math/tags permanently until explicitly removed. (e.g., Equipped Ring) 
+	TURN_BASED # Applies math/tags for X turns, handled discretely by an external Turn Manager.
 }
 
 ## Defines the stacking behaviour for the effect.
@@ -34,7 +35,14 @@ enum StackingPolicy {
 	set(value): 
 		duration = maxf(0.0, value)
 ## Periodic modifiers are permanent and do NOT reverse when the effect ends.
+## Note: For Turn-Based effects, set this to 1.0 to tell the system it is a DoT, not a Buff.
 @export_range(0.0, 999.0, 0.1, "or_greater") var period: float = 0.0
+
+@export_category("Turn Based Settings")
+## How many turns this effect lasts (only used if policy is TURN_BASED).
+@export_range(1, 999) var duration_turns: int = 1
+## If true, periodic effects (period > 0) trigger their math and cues when the turn advances.
+@export var tick_on_turn_start: bool = true
 
 @export_category("Application Requirements")
 ## The target MUST have all of these tags for this effect to apply.

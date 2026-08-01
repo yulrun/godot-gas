@@ -100,8 +100,8 @@ func _process(delta: float) -> void:
 	for i in range(_active_effects.size() - 1, -1, -1):
 		var active_effect = _active_effects[i]
 		
-		# Handle Periodic Ticks
-		if active_effect.spec.period > 0.0:
+		# Handle Periodic Ticks (Skip if Turn-Based)
+		if active_effect.spec.period > 0.0 and active_effect.spec.effect_def.policy != GameplayEffect.DurationPolicy.TURN_BASED:
 			active_effect.time_until_next_tick -= delta
 			if active_effect.time_until_next_tick <= 0.0:
 				
@@ -125,6 +125,35 @@ func _process(delta: float) -> void:
 			active_effect.time_remaining -= delta
 			
 			if active_effect.time_remaining <= 0.0:
+				remove_active_effect(active_effect)
+
+
+## Called by your external Turn Manager to process turn-based effects.
+func advance_turn() -> void:
+	for i in range(_active_effects.size() - 1, -1, -1):
+		var active_effect = _active_effects[i]
+		var spec = active_effect.spec
+		
+		if spec.effect_def.policy == GameplayEffect.DurationPolicy.TURN_BASED:
+			
+			# 1. Handle Turn-Based Periodic Ticks (DoTs / HoTs)
+			if spec.period > 0.0 and spec.effect_def.tick_on_turn_start:
+				# 1a. Trigger Cues
+				for cue_tag in spec.effect_def.periodic_cue_tags:
+					execute_cue(cue_tag, {"target": get_parent()})
+				
+				# 1b. Broadcast Events
+				_trigger_effect_events(spec)
+				
+				# 1c. Re-evaluate and apply math
+				_evaluate_spec(spec)
+				_commit_spec_math(spec)
+			
+			# 2. Decrement the turn counter
+			spec.remaining_turns -= 1
+			
+			# 3. Check for expiration
+			if spec.remaining_turns <= 0:
 				remove_active_effect(active_effect)
 
 
@@ -385,13 +414,16 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> bool:
 	_evaluate_spec(spec)
 	
 	# 3. Handle Stacking & Refreshing
-	if effect.policy == GameplayEffect.DurationPolicy.DURATION:
+	if effect.policy == GameplayEffect.DurationPolicy.DURATION or effect.policy == GameplayEffect.DurationPolicy.TURN_BASED:
 		if effect.stacking_policy == GameplayEffect.StackingPolicy.REFRESH_DURATION:
 			# Search to see if we already have this exact effect definition running
 			for active_effect in _active_effects:
 				if active_effect.spec.effect_def == effect:
 					# We found it! Reset its clock back to full based on the dynamically altered Spec!
-					active_effect.time_remaining = spec.duration 
+					if effect.policy == GameplayEffect.DurationPolicy.DURATION:
+						active_effect.time_remaining = spec.duration 
+					elif effect.policy == GameplayEffect.DurationPolicy.TURN_BASED:
+						active_effect.spec.remaining_turns = spec.remaining_turns
 					
 					# Re-trigger application cues so the player knows it refreshed!
 					for cue_tag in effect.application_cue_tags:
@@ -414,7 +446,7 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> bool:
 	match effect.policy:
 		GameplayEffect.DurationPolicy.INSTANT:
 			_execute_instant_spec(spec)
-		GameplayEffect.DurationPolicy.DURATION, GameplayEffect.DurationPolicy.INFINITE:
+		GameplayEffect.DurationPolicy.DURATION, GameplayEffect.DurationPolicy.INFINITE, GameplayEffect.DurationPolicy.TURN_BASED:
 			_execute_active_spec(spec)
 	
 	# 1. Notify the Defender's UI that an effect was fully processed

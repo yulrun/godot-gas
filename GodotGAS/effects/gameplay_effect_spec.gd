@@ -32,6 +32,9 @@ var calculated_deltas: Dictionary = {}
 ## The runtime duration of the effect. Mutated by ExecCalcs before application.
 var duration: float = 0.0
 
+## The runtime duration in turns of the effect. Mutated by ExecCalcs before application.
+var remaining_turns: int = 0
+
 ## The runtime period of the effect. Mutated by ExecCalcs before application.
 var period: float = 0.0
 
@@ -52,6 +55,7 @@ func _init(in_effect: GameplayEffect, in_context: GameplayEffectContext, in_leve
 	# Snapshot the base resource data into our mutable variables
 	duration = in_effect.duration
 	period = in_effect.period
+	remaining_turns = in_effect.duration_turns
 	
 	# Pre-calculate and snapshot the base magnitudes so ExecCalcs can mutate them
 	for mod in in_effect.modifiers:
