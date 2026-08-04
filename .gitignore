@@ -1,6 +1,5 @@
 # Godot-specific ignores
 .godot/
-*.uid
 exported_presets.cfg
 
 # Godot export silently creates these
