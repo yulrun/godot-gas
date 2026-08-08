@@ -7,12 +7,6 @@ enum EditorTagsTagEditorPropertyMatchType {
 }
 
 const PROJECT_SETTINGS_NAME: = "godot_gas"
-const PROJECT_SETTINGS_NAME_EDITOR: = PROJECT_SETTINGS_NAME + "/editor"
-const PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR: = PROJECT_SETTINGS_NAME_EDITOR + "/tag_property_editor"
-const PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE: = PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR + "/enable"
-const PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH: = PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR + "/match"
-const PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON: = PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH + "/on"
-const PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE: = PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH + "/type"
 const PROJECT_SETTINGS_NAME_RESOURCES: = PROJECT_SETTINGS_NAME + "/resources"
 const PROJECT_SETTINGS_NAME_RESOURCES_ATTRIBUTES: = PROJECT_SETTINGS_NAME_RESOURCES + "/attributes"
 const PROJECT_SETTINGS_NAME_RESOURCES_ATTRIBUTES_DRAFT_CONFIG_FILE: = PROJECT_SETTINGS_NAME_RESOURCES_ATTRIBUTES + "/draft_configuration_file"
@@ -22,10 +16,6 @@ const PROJECT_SETTINGS_NAME_RESOURCES_CUES_REGISTRY: = PROJECT_SETTINGS_NAME_RES
 const PROJECT_SETTINGS_NAME_RESOURCES_TAGS: = PROJECT_SETTINGS_NAME_RESOURCES + "/tags"
 const PROJECT_SETTINGS_NAME_RESOURCES_TAGS_REGISTRY: = PROJECT_SETTINGS_NAME_RESOURCES_TAGS + "/registry_file"
 const PROJECT_SETTINGS_NAME_RESOURCES_TAGS_GENERATED_SCRIPT: = PROJECT_SETTINGS_NAME_RESOURCES_TAGS + "/generated_script"
-
-const PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_ENABLE: = true
-const PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON: = "gas_tag,gas_tags"
-const PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE: = EditorTagsTagEditorPropertyMatchType.SUFFIX
 
 const PROJECT_SETTINGS_DEFAULT_PATH: = "res://godot_gas"
 const PROJECT_SETTINGS_DEFAULT_PATH_RESOURCES_ATTRIBUTES_DRAFT_CONFIG_FILE: = PROJECT_SETTINGS_DEFAULT_PATH + "/attributes_draft.cfg"
@@ -41,7 +31,6 @@ static func init_project_settings() -> void:
 	_init_project_settings_generated_tag_script_path()
 	_init_project_settings_registry_cue()
 	_init_project_settings_registry_tag()
-	_init_project_settings_editor_tag_property_editor()
 
 
 static func get_attributes_draft_config_path() -> String:
@@ -72,25 +61,6 @@ static func get_registry_tag_path() -> String:
 	if not ProjectSettings.has_setting(PROJECT_SETTINGS_NAME_RESOURCES_TAGS_REGISTRY):
 		ProjectSettings.set_setting(PROJECT_SETTINGS_NAME_RESOURCES_TAGS_REGISTRY, PROJECT_SETTINGS_DEFAULT_PATH_RESOURCES_TAGS_REGISTRY)
 	return ProjectSettings.get_setting(PROJECT_SETTINGS_NAME_RESOURCES_TAGS_REGISTRY)
-
-
-static func get_editor_tag_property_editor_enabled() -> bool:
-	if not ProjectSettings.has_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE):
-		ProjectSettings.set_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_ENABLE)
-	return ProjectSettings.get_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE)
-
-
-static func get_editor_tag_property_editor_match_on() -> PackedStringArray:
-	if not ProjectSettings.has_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON):
-		ProjectSettings.set_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON)
-	var match_on_list: = ProjectSettings.get_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON) as String
-	return match_on_list.split(",", false)
-
-
-static func get_editor_tag_property_editor_match_type() -> EditorTagsTagEditorPropertyMatchType:
-	if not ProjectSettings.has_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE):
-		ProjectSettings.set_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE)
-	return ProjectSettings.get_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE)
 
 
 static func _init_project_settings_attributes_output_dir() -> void:
@@ -171,34 +141,6 @@ static func _init_project_settings_registry_tag() -> void:
 
 		DirAccess.make_dir_recursive_absolute(registry_path.get_base_dir())
 		ResourceSaver.save(default_registry, registry_path)
-
-
-static func _init_project_settings_editor_tag_property_editor() -> void:
-	if not ProjectSettings.has_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE):
-		ProjectSettings.set_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_ENABLE)
-	if not ProjectSettings.has_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON):
-		ProjectSettings.set_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON)
-	if not ProjectSettings.has_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE):
-		ProjectSettings.set_setting(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE)
-
-	ProjectSettings.set_initial_value(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_ENABLE)
-	ProjectSettings.set_initial_value(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON)
-	ProjectSettings.set_initial_value(PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE, PROJECT_SETTINGS_DEFAULT_VALUE_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE)
-
-	ProjectSettings.add_property_info({
-		"name": PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_ENABLE,
-		"type": TYPE_BOOL,
-	})
-	ProjectSettings.add_property_info({
-		"name": PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_ON,
-		"type": TYPE_STRING,
-	})
-	ProjectSettings.add_property_info({
-		"name": PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR_MATCH_TYPE,
-		"type": TYPE_INT,
-		"hint": PROPERTY_HINT_ENUM,
-		"hint_string": "Prefix,Suffix,Anywhere",
-	})
 
 
 ## Dynamically parses an SVG file in memory, replacing pure white/grey with the native Editor color.
