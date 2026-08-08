@@ -17,6 +17,7 @@ const GameplayTagEditorProperty = preload("res://addons/GodotGAS/gameplay_tag/ga
 const HINT_STRING_DELIMITER: = ","
 const HINT_STRING_GAS_PREFIX: = "gas::"
 const HINT_STRING_GAS_TAG_PREFIX: = "gas::tag"
+const HINT_STRING_GAS_TAG_HINT_STRICT_ONLY: = "strict_only"
 
 #region Inspector Parsing
 ## Native Godot virtual to determine if this plugin handles the current object.
@@ -32,6 +33,7 @@ func _parse_property(object: Object, type: Variant.Type, name: String, hint_type
 
 	var hint_string_args: = hint_string.split(HINT_STRING_DELIMITER)
 	var matched: = HINT_STRING_GAS_TAG_PREFIX in hint_string_args
+	var strict_only: = HINT_STRING_GAS_TAG_HINT_STRICT_ONLY in hint_string_args
 
 	if matched:
 		match type:
@@ -39,7 +41,7 @@ func _parse_property(object: Object, type: Variant.Type, name: String, hint_type
 			TYPE_PACKED_STRING_ARRAY, \
 			TYPE_STRING, \
 			TYPE_STRING_NAME:
-				var editor_property = GameplayTagEditorProperty.new()
+				var editor_property = GameplayTagEditorProperty.new(type, strict_only)
 				add_property_editor(name, editor_property)
 				return true # Tells Godot to skip rendering the default input field
 			

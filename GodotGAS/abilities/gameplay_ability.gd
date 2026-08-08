@@ -19,7 +19,7 @@ signal ability_ended(was_cancelled: bool)
 ## The simple name to be used for logging or UI
 @export var ability_name: String = ""
 ## The tag that uniquely identifies this ability.
-@export_custom(PROPERTY_HINT_NONE, "gas::tag") var ability_tag: StringName = "Ability.None"
+@export_custom(PROPERTY_HINT_NONE, "gas::tag,strict_only") var ability_tag: StringName = "\"Ability.None\""
 ## The current level of this ability, used for scaling math and effects.
 @export var ability_level: float = 1.0
 ## Tags that, if present on the ASC, will prevent this ability from activating.
@@ -39,7 +39,7 @@ signal ability_ended(was_cancelled: bool)
 
 @export_category("Ability Triggers")
 ## If set, the ASC will automatically try to activate this ability when it receives this exact event tag.
-@export_custom(PROPERTY_HINT_NONE, "gas::tag") var trigger_event_tag: StringName = ""
+@export_custom(PROPERTY_HINT_NONE, "gas::tag,strict_only") var trigger_event_tag: StringName = ""
 
 @export_category("Input Routing")
 ## The integer ID this ability is currently bound to. -1 means unbound.

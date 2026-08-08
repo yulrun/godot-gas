@@ -44,6 +44,8 @@ signal ability_activation_failed(ability: GameplayAbility, reason: ActivationErr
 ## UI listens to this to spawn Damage Numbers, "Miss!", or "Blocked!" text.
 signal effect_received(source_asc: AbilitySystemComponent, spec: GameplayEffectSpec)
 
+const GodotGasTagUtility: = preload("res://addons/GodotGAS/utilities/tags.gd")
+
 @export var attribute_sets: Array[AttributeSet] = []
 
 ## If false, this ASC will create a unique deep copy of its attribute sets on start.
@@ -642,39 +644,35 @@ func get_tag_duration_remaining(tag: StringName) -> float:
 
 ## Checks if the ASC has the exact given tag.
 func has_tag_exact(tag: StringName) -> bool:
-	return _active_tags.has(tag)
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GodotGasTagUtility.has_tag(active_tags, tag, true)
 
 
 ## Checks if the ASC has the given tag or any of its children.
-func has_tag(tag: StringName) -> bool:
-	if _active_tags.has(tag):
-		return true
-		
-	var tag_str = String(tag)
-	for active_tag in _active_tags.keys():
-		var active_str = String(active_tag)
-		if active_str.begins_with(tag_str + "."):
-			return true
-			
-	return false
+func has_tag(tag: StringName, exact: = false) -> bool:
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GodotGasTagUtility.has_tag(active_tags, tag, exact)
 
 
 ## Returns true if the ASC has at least one of the tags in the array.
-func has_any_tags(tags: Array[StringName]) -> bool:
-	for t in tags:
-		if has_tag(t):
-			return true
-	return false
+func has_any_tags(tags: Array[StringName], exact: = false) -> bool:
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GodotGasTagUtility.has_any_tags(active_tags, tags, exact)
 
 
 ## Returns true only if the ASC has every tag in the array.
-func has_all_tags(tags: Array[StringName]) -> bool:
-	if tags.is_empty():
-		return false
-	for t in tags:
-		if not has_tag(t):
-			return false
-	return true
+func has_all_tags(tags: Array[StringName], exact: = false) -> bool:
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GodotGasTagUtility.has_all_tags(active_tags, tags, exact)
+
 #endregion
 
 
