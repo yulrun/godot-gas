@@ -740,10 +740,11 @@ func send_gameplay_event(event_tag: StringName, payload: Variant = null) -> void
 	for ability in _active_abilities:
 		if ability.trigger_event_tag == event_tag:
 			# The ability was listening for this! Try to activate it and pass the data.
-			if payload is GameplayEffectContext:
-				ability.try_activate(payload)
-			elif payload is GameplayEffectSpec:
+			if payload is GameplayEffectSpec:
 				ability.try_activate(payload.context)
+			else:
+				# If `payload` is `GameplayEffectContext` or else.
+				ability.try_activate(payload)
 
 
 func _notification(what: int) -> void:
@@ -778,16 +779,18 @@ func _debug_effect_applied_to_target(target_asc: AbilitySystemComponent, spec: G
 
 func _debug_gameplay_event_received(event_tag: StringName, payload: Variant) -> void:
 	var payload_desc = "[color=red]Null Payload[/color]"
-	
+
 	var instigator = null
 	if payload is GameplayEffectContext:
 		instigator = payload.instigator
 	elif payload is GameplayEffectSpec and payload.context:
 		instigator = payload.context.instigator
-		
+
 	if instigator:
 		payload_desc = "Payload(From: [color=cyan]%s[/color])" % instigator.name
-		
+	elif payload != null:
+		payload_desc = "Payload([color=purple]%s[/color])" % payload
+
 	print_rich("[color=gray]> (DEBUG)[/color] [color=cyan]<%s>[/color] signal [color=orange][gameplay_event_received][/color] %s's ASC received [color=green]'%s'[/color] event with %s" % [self.get_parent().name, self.get_parent().name, event_tag, payload_desc])
 
 
