@@ -44,8 +44,6 @@ signal ability_activation_failed(ability: GameplayAbility, reason: ActivationErr
 ## UI listens to this to spawn Damage Numbers, "Miss!", or "Blocked!" text.
 signal effect_received(source_asc: AbilitySystemComponent, spec: GameplayEffectSpec)
 
-const GodotGasTagUtility: = preload("res://addons/GodotGAS/utilities/tags.gd")
-
 @export var attribute_sets: Array[AttributeSet] = []
 
 ## If false, this ASC will create a unique deep copy of its attribute sets on start.
@@ -647,7 +645,7 @@ func has_tag_exact(tag: StringName) -> bool:
 	var active_tags: Array[StringName] = []
 	for _active_tag in _active_tags.keys():
 		active_tags.push_back(StringName(_active_tag))
-	return GodotGasTagUtility.has_tag(active_tags, tag, true)
+	return GameplayTagUtilities.has_tag(active_tags, tag, true)
 
 
 ## Checks if the ASC has the given tag or any of its children.
@@ -655,7 +653,7 @@ func has_tag(tag: StringName, exact: = false) -> bool:
 	var active_tags: Array[StringName] = []
 	for _active_tag in _active_tags.keys():
 		active_tags.push_back(StringName(_active_tag))
-	return GodotGasTagUtility.has_tag(active_tags, tag, exact)
+	return GameplayTagUtilities.has_tag(active_tags, tag, exact)
 
 
 ## Returns true if the ASC has at least one of the tags in the array.
@@ -663,7 +661,7 @@ func has_any_tags(tags: Array[StringName], exact: = false) -> bool:
 	var active_tags: Array[StringName] = []
 	for _active_tag in _active_tags.keys():
 		active_tags.push_back(StringName(_active_tag))
-	return GodotGasTagUtility.has_any_tags(active_tags, tags, exact)
+	return GameplayTagUtilities.has_any_tags(active_tags, tags, exact)
 
 
 ## Returns true only if the ASC has every tag in the array.
@@ -671,7 +669,7 @@ func has_all_tags(tags: Array[StringName], exact: = false) -> bool:
 	var active_tags: Array[StringName] = []
 	for _active_tag in _active_tags.keys():
 		active_tags.push_back(StringName(_active_tag))
-	return GodotGasTagUtility.has_all_tags(active_tags, tags, exact)
+	return GameplayTagUtilities.has_all_tags(active_tags, tags, exact)
 
 #endregion
 
@@ -738,10 +736,11 @@ func send_gameplay_event(event_tag: StringName, payload: Variant = null) -> void
 	for ability in _active_abilities:
 		if ability.trigger_event_tag == event_tag:
 			# The ability was listening for this! Try to activate it and pass the data.
-			if payload is GameplayEffectContext:
-				ability.try_activate(payload)
-			elif payload is GameplayEffectSpec:
+			if payload is GameplayEffectSpec:
 				ability.try_activate(payload.context)
+			else:
+				# If `payload` is `GameplayEffectContext` or else.
+				ability.try_activate(payload)
 
 
 func _notification(what: int) -> void:
@@ -785,6 +784,8 @@ func _debug_gameplay_event_received(event_tag: StringName, payload: Variant) -> 
 		
 	if instigator:
 		payload_desc = "Payload(From: [color=cyan]%s[/color])" % instigator.name
+	elif payload != null:
+		payload_desc = "Payload([color=purple]%s[/color])" % payload 
 		
 	print_rich("[color=gray]> (DEBUG)[/color] [color=cyan]<%s>[/color] signal [color=orange][gameplay_event_received][/color] %s's ASC received [color=green]'%s'[/color] event with %s" % [self.get_parent().name, self.get_parent().name, event_tag, payload_desc])
 

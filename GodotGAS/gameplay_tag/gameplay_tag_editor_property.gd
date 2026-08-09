@@ -18,8 +18,6 @@ enum TreeItemButtonId {
 
 ## Addon project settings.
 const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
-## Tags utilities.
-const GodotGasTagUtility: = preload("res://addons/GodotGAS/utilities/tags.gd")
 
 ## Property type.
 var property_type: = TYPE_STRING
@@ -280,7 +278,7 @@ func _refresh_tree() -> void:
 
 				if current_path in _current_tags:
 					item_checked = true
-				elif GodotGasTagUtility.to_strict(current_path) in _current_tags:
+				elif GameplayTagUtilities.to_strict(current_path) in _current_tags:
 					item_checked = true
 					tag_is_strict = true
 
@@ -292,7 +290,7 @@ func _refresh_tree() -> void:
 				item.set_text(0, part_name)
 				item.set_tooltip_text(
 					0, 
-					GodotGasTagUtility.to_strict(current_path) \
+					GameplayTagUtilities.to_strict(current_path) \
 						if tag_is_strict \
 						else current_path,
 				)
@@ -325,7 +323,7 @@ func _on_tree_item_edited() -> void:
 	var is_checked = item.is_checked(0)
 
 	if tag_is_strict:
-		tag = GodotGasTagUtility.to_strict(tag)
+		tag = GameplayTagUtilities.to_strict(tag)
 	
 	_is_updating_from_tree = true
 	
@@ -379,9 +377,9 @@ func _on_tree_button_strict(item: TreeItem, column: int, _id: int, mouse_button_
 	var new_tag_is_strict: = not tag_is_strict  
 
 	if old_tag_is_strict:
-		old_tag = GodotGasTagUtility.to_strict(tag)
+		old_tag = GameplayTagUtilities.to_strict(tag)
 	if new_tag_is_strict:
-		new_tag = GodotGasTagUtility.to_strict(tag)
+		new_tag = GameplayTagUtilities.to_strict(tag)
 
 	var prop_val = get_edited_object().get(get_edited_property())
 	var is_array_type = prop_val is Array or prop_val is PackedStringArray
@@ -415,7 +413,7 @@ func _on_tree_button_delete(item: TreeItem, column: int, _id: int, mouse_button_
 	var is_array_type = prop_val is Array or prop_val is PackedStringArray
 
 	if tag_is_strict:
-		tag = GodotGasTagUtility.to_strict(tag)
+		tag = GameplayTagUtilities.to_strict(tag)
 
 	if is_array_type:
 		# Break memory link with strictly typed array

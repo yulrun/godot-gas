@@ -1,4 +1,5 @@
 extends Object
+class_name GameplayTagUtilities
 
 const STR_DOUBLE_QUOTE: = "\""
 
@@ -65,4 +66,8 @@ static func to_lax(tag_query: StringName) -> StringName:
 			.trim_prefix(STR_DOUBLE_QUOTE) \
 			.trim_suffix(STR_DOUBLE_QUOTE)
 	)
+
+
+static func is_equal(a: StringName, b: StringName) -> bool:
+    return to_lax(a) == to_lax(b)
 
