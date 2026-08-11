@@ -19,13 +19,13 @@ signal ability_ended(was_cancelled: bool)
 ## The simple name to be used for logging or UI
 @export var ability_name: String = ""
 ## The tag that uniquely identifies this ability.
-@export var ability_tag: StringName = "Ability.None"
+@export_custom(PROPERTY_HINT_NONE, "gas::tag,strict_only") var ability_tag: StringName = "\"Ability.None\""
 ## The current level of this ability, used for scaling math and effects.
 @export var ability_level: float = 1.0
 ## Tags that, if present on the ASC, will prevent this ability from activating.
-@export var activation_blocked_tags: Array[StringName] = []
+@export_custom(PROPERTY_HINT_NONE, "gas::tag") var activation_blocked_tags: Array[StringName] = []
 ## Tags that, if not present on the ASC, will prevent this ability from activating.
-@export var activation_required_tags: Array[StringName] = []
+@export_custom(PROPERTY_HINT_NONE, "gas::tag") var activation_required_tags: Array[StringName] = []
 
 @export_category("Ability Mechanics")
 ## The gameplay effect applied to the owner to deduct resources upon committing.
@@ -35,11 +35,11 @@ signal ability_ended(was_cancelled: bool)
 ## Any additional shared effects (like a Global Cooldown) that should be applied when cast.
 @export var shared_cooldown_effects: Array[GameplayEffect] = []
 ## Explicitly list any shared cooldowns (like GCDs) this ability should respect.
-@export var shared_cooldown_tags: Array[StringName] = []
+@export_custom(PROPERTY_HINT_NONE, "gas::tag") var shared_cooldown_tags: Array[StringName] = []
 
 @export_category("Ability Triggers")
 ## If set, the ASC will automatically try to activate this ability when it receives this exact event tag.
-@export var trigger_event_tag: StringName = ""
+@export_custom(PROPERTY_HINT_NONE, "gas::tag,strict_only") var trigger_event_tag: StringName = ""
 
 @export_category("Input Routing")
 ## The integer ID this ability is currently bound to. -1 means unbound.
@@ -69,7 +69,7 @@ func _ready() -> void:
 
 #region Execution & State
 ## The public entry point. Accepts an optional payload if triggered by an event.
-func try_activate(event_payload: GameplayEffectContext = null) -> bool:
+func try_activate(event_payload: Variant = null) -> bool:
 	if is_active or not owner_asc:
 		return false
 	

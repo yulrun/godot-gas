@@ -642,39 +642,35 @@ func get_tag_duration_remaining(tag: StringName) -> float:
 
 ## Checks if the ASC has the exact given tag.
 func has_tag_exact(tag: StringName) -> bool:
-	return _active_tags.has(tag)
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GameplayTagUtilities.has_tag(active_tags, tag, true)
 
 
 ## Checks if the ASC has the given tag or any of its children.
-func has_tag(tag: StringName) -> bool:
-	if _active_tags.has(tag):
-		return true
-		
-	var tag_str = String(tag)
-	for active_tag in _active_tags.keys():
-		var active_str = String(active_tag)
-		if active_str.begins_with(tag_str + "."):
-			return true
-			
-	return false
+func has_tag(tag: StringName, exact: = false) -> bool:
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GameplayTagUtilities.has_tag(active_tags, tag, exact)
 
 
 ## Returns true if the ASC has at least one of the tags in the array.
-func has_any_tags(tags: Array[StringName]) -> bool:
-	for t in tags:
-		if has_tag(t):
-			return true
-	return false
+func has_any_tags(tags: Array[StringName], exact: = false) -> bool:
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GameplayTagUtilities.has_any_tags(active_tags, tags, exact)
 
 
 ## Returns true only if the ASC has every tag in the array.
-func has_all_tags(tags: Array[StringName]) -> bool:
-	if tags.is_empty():
-		return false
-	for t in tags:
-		if not has_tag(t):
-			return false
-	return true
+func has_all_tags(tags: Array[StringName], exact: = false) -> bool:
+	var active_tags: Array[StringName] = []
+	for _active_tag in _active_tags.keys():
+		active_tags.push_back(StringName(_active_tag))
+	return GameplayTagUtilities.has_all_tags(active_tags, tags, exact)
+
 #endregion
 
 
@@ -740,10 +736,11 @@ func send_gameplay_event(event_tag: StringName, payload: Variant = null) -> void
 	for ability in _active_abilities:
 		if ability.trigger_event_tag == event_tag:
 			# The ability was listening for this! Try to activate it and pass the data.
-			if payload is GameplayEffectContext:
-				ability.try_activate(payload)
-			elif payload is GameplayEffectSpec:
+			if payload is GameplayEffectSpec:
 				ability.try_activate(payload.context)
+			else:
+				# If `payload` is `GameplayEffectContext` or else.
+				ability.try_activate(payload)
 
 
 func _notification(what: int) -> void:
@@ -787,6 +784,8 @@ func _debug_gameplay_event_received(event_tag: StringName, payload: Variant) -> 
 		
 	if instigator:
 		payload_desc = "Payload(From: [color=cyan]%s[/color])" % instigator.name
+	elif payload != null:
+		payload_desc = "Payload([color=purple]%s[/color])" % payload 
 		
 	print_rich("[color=gray]> (DEBUG)[/color] [color=cyan]<%s>[/color] signal [color=orange][gameplay_event_received][/color] %s's ASC received [color=green]'%s'[/color] event with %s" % [self.get_parent().name, self.get_parent().name, event_tag, payload_desc])
 

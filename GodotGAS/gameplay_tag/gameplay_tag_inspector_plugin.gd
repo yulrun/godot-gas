@@ -14,9 +14,10 @@ extends EditorInspectorPlugin
 ## The preloaded custom editor property script used for tag selection.
 const GameplayTagEditorProperty = preload("res://addons/GodotGAS/gameplay_tag/gameplay_tag_editor_property.gd")
 
-## Addon project settings.
-const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
-
+const HINT_STRING_DELIMITER: = ","
+const HINT_STRING_GAS_PREFIX: = "gas::"
+const HINT_STRING_GAS_TAG_PREFIX: = "gas::tag"
+const HINT_STRING_GAS_TAG_HINT_STRICT_ONLY: = "strict_only"
 
 #region Inspector Parsing
 ## Native Godot virtual to determine if this plugin handles the current object.
@@ -27,30 +28,12 @@ func _can_handle(object: Object) -> bool:
 
 ## Native Godot virtual that intercepts property rendering to inject custom UI.
 func _parse_property(object: Object, type: Variant.Type, name: String, hint_type: PropertyHint, hint_string: String, usage_flags: int, wide: bool) -> bool:
-	# Here, we check if the object in the inspector is literally a `GameplayTagRegistry`.
-	var is_native: = name.to_lower() == "tags" and object is GameplayTagRegistry
-	if not GodotGasProjectSettings.get_editor_tag_property_editor_enabled() or is_native:
-		# Make sure to return `false` when `is native` because we don't want the tag editor property
-		# to show up in the registries. People could start to click on tags to deactivate them,
-		# but it would instead delete them permanently.
+	if hint_type != PROPERTY_HINT_NONE:
 		return false
-	var matches_on: = GodotGasProjectSettings.get_editor_tag_property_editor_match_on()
-	var match_type: = GodotGasProjectSettings.get_editor_tag_property_editor_match_type()
 
-	# We intercept arrays or strings containing the needle.
-	# Here, we match 
-	var matched: = false
-	if not matched:
-		for match_on in matches_on:
-			match match_type:
-				GodotGasProjectSettings.EditorTagsTagEditorPropertyMatchType.PREFIX:
-					matched = name.to_lower().begins_with(match_on)
-				GodotGasProjectSettings.EditorTagsTagEditorPropertyMatchType.SUFFIX:
-					matched = name.to_lower().ends_with(match_on)
-				GodotGasProjectSettings.EditorTagsTagEditorPropertyMatchType.ANYWHERE:
-					matched = match_on in name.to_lower()
-			if matched:
-				break
+	var hint_string_args: = hint_string.split(HINT_STRING_DELIMITER)
+	var matched: = HINT_STRING_GAS_TAG_PREFIX in hint_string_args
+	var strict_only: = HINT_STRING_GAS_TAG_HINT_STRICT_ONLY in hint_string_args
 
 	if matched:
 		match type:
@@ -58,7 +41,7 @@ func _parse_property(object: Object, type: Variant.Type, name: String, hint_type
 			TYPE_PACKED_STRING_ARRAY, \
 			TYPE_STRING, \
 			TYPE_STRING_NAME:
-				var editor_property = GameplayTagEditorProperty.new()
+				var editor_property = GameplayTagEditorProperty.new(type, strict_only)
 				add_property_editor(name, editor_property)
 				return true # Tells Godot to skip rendering the default input field
 			

@@ -11,8 +11,19 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 extends EditorProperty
 
+enum TreeItemButtonId {
+	STRICT = 1,
+	DELETE = 2,
+}
+
 ## Addon project settings.
 const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
+
+## Property type.
+var property_type: = TYPE_STRING
+## Only permit selection of strict types. (tree leaves)
+var strict_only: = false
+
 
 ## The main button displayed in the inspector row.
 var _button := Button.new()
@@ -46,7 +57,17 @@ var _is_updating_from_tree: bool = false
 
 
 #region Initialization & Lifecycle
-func _init() -> void:
+func _init(property_type: = TYPE_STRING, strict_only: = false) -> void:
+	assert(
+		property_type == TYPE_ARRAY
+		or property_type == TYPE_PACKED_STRING_ARRAY
+		or property_type == TYPE_STRING
+		or property_type == TYPE_STRING_NAME,
+		"Unsupported variant property type.",
+	)
+	self.property_type = property_type
+	self.strict_only = strict_only
+
 	_registry = load(GodotGasProjectSettings.get_registry_tag_path()) as GameplayTagRegistry
 	
 	_button.text = "Edit Tags..."
@@ -107,7 +128,7 @@ func _on_registry_changed() -> void:
 			
 	# If this specific inspector row lost a tag, update its text instantly
 	if did_change:
-		_button.text = "Tags (%d selected)" % _current_tags.size()
+		_update_button_text()
 
 
 ## Synchronizes the UI with the inspected object's data.
@@ -119,10 +140,46 @@ func _update_property() -> void:
 	elif val is StringName or val is String:
 		_current_tags = [val] if not String(val).is_empty() else []
 	
-	_button.text = "Tags (%d selected)" % _current_tags.size()
+	_update_button_text()
 	
 	if is_instance_valid(_popup) and _popup.visible and not _is_updating_from_tree:
 		_refresh_tree()
+
+
+func _update_button_text() -> void:
+	var tooltip_text: = ""
+	var current_tags: = _current_tags.duplicate()
+	current_tags.sort_custom(
+		func(a: String, b: String):
+			return a.casecmp_to(b) < 0
+	)
+
+	match property_type:
+		TYPE_STRING, \
+		TYPE_STRING_NAME:
+			if current_tags.is_empty():
+				_button.text = "No tag"
+				tooltip_text = "No tag selected."
+			else:
+				_button.text = current_tags[0]
+				tooltip_text = "Selected tag:"
+				tooltip_text += "\n  - %s" % current_tags[0]
+		TYPE_ARRAY, \
+		TYPE_PACKED_STRING_ARRAY:
+			if current_tags.is_empty():
+				_button.text = "No tags"
+				tooltip_text = "No tags selected."
+			else:
+				_button.text = "Tags (%d selected)" % current_tags.size()
+				var plural: = ""
+				if current_tags.size() >= 2:
+					plural = "s"
+				tooltip_text = "Selected tag%s:" % plural
+				for current_tag in current_tags:
+					tooltip_text += "\n  - %s" % current_tag
+
+	_button.tooltip_text = tooltip_text
+
 #endregion
 
 
@@ -182,45 +239,75 @@ func _refresh_tree() -> void:
 		return
 	
 	_tree.clear()
-	var root = _tree.create_item()
-	var filter = _search_bar.text.to_lower()
+	var root: = _tree.create_item()
+	var filter: = _search_bar.text.to_lower()
 	var created_nodes: Dictionary = {}
-	var trash_icon = EditorInterface.get_editor_theme().get_icon("Remove", "EditorIcons")
+	var icon_trash: = EditorInterface.get_editor_theme().get_icon("Remove", "EditorIcons")
+	var icon_strict: = EditorInterface.get_editor_theme().get_icon("MatchCase", "EditorIcons")
+	var accent_color: Color = EditorInterface.get_editor_theme().get_color("accent_color", "Editor")
 	
 	for tag in _registry.tags:
-		var tag_str = String(tag).strip_edges()
+		var tag_str: = String(tag).strip_edges()
 		if tag_str.is_empty(): 
 			continue
-		
+
 		if not filter.is_empty() and not filter in tag_str.to_lower():
 			continue
-			
-		var parts = tag_str.split(".")
-		var current_path = ""
-		var parent_item = root
+	
+		var parts: = tag_str.split(".")
+		var current_path: = StringName()
+		var parent_item: = root
 		
 		for i in range(parts.size()):
-			var part_name = parts[i].strip_edges()
+			var part_name: = parts[i].strip_edges()
 			if part_name.is_empty(): 
 				continue
 			
-			current_path = part_name if current_path.is_empty() else current_path + "." + part_name
-			
+			current_path = StringName(
+				part_name \
+					if current_path.is_empty() \
+					else current_path + "." + part_name,
+			)
+
 			if created_nodes.has(current_path):
 				parent_item = created_nodes[current_path]
 			else:
-				var item = _tree.create_item(parent_item)
-				item.set_metadata(0, current_path)
-				
+				var item: = _tree.create_item(parent_item)
+				var item_checked: = false
+				var tag_is_strict: = strict_only
+
+				if current_path in _current_tags:
+					item_checked = true
+				elif GameplayTagUtilities.to_strict(current_path) in _current_tags:
+					item_checked = true
+					tag_is_strict = true
+
+				item.set_metadata(0, {
+					"tag": current_path,
+					"is_strict": tag_is_strict,
+				})
+				item.set_cell_mode(0, TreeItem.CELL_MODE_CHECK)
+				item.set_text(0, part_name)
+				item.set_tooltip_text(
+					0, 
+					GameplayTagUtilities.to_strict(current_path) \
+						if tag_is_strict \
+						else current_path,
+				)
+				item.set_checked(0, item_checked)
+				item.set_editable(0, true)
+
 				if current_path == tag_str:
-					item.set_cell_mode(0, TreeItem.CELL_MODE_CHECK)
-					item.set_text(0, part_name)
-					item.set_checked(0, _current_tags.has(StringName(current_path)))
-					item.set_editable(0, true)
-					item.add_button(0, trash_icon, 1, false, "Delete from Registry")
-				else:
-					item.set_text(0, part_name)
-					
+					var icon_strict_index: = 0
+
+					if not strict_only:
+						item.add_button(0, icon_strict, TreeItemButtonId.STRICT, not item_checked, "Strict Match")
+						icon_strict_index = item.get_button_count(0) - 1
+						if tag_is_strict:
+							item.set_button_color(0, icon_strict_index, accent_color)
+
+					item.add_button(0, icon_trash, TreeItemButtonId.DELETE, false, "Delete from Registry")
+
 				created_nodes[current_path] = item
 				parent_item = item
 
@@ -230,8 +317,13 @@ func _on_tree_item_edited() -> void:
 	if not item:
 		return
 	
-	var tag_path = StringName(item.get_metadata(0))
+	var metadata: Dictionary = item.get_metadata(0)
+	var tag: StringName = metadata["tag"]
+	var tag_is_strict: bool = metadata["is_strict"]
 	var is_checked = item.is_checked(0)
+
+	if tag_is_strict:
+		tag = GameplayTagUtilities.to_strict(tag)
 	
 	_is_updating_from_tree = true
 	
@@ -245,17 +337,17 @@ func _on_tree_item_edited() -> void:
 			new_typed_array.assign(prop_val)
 			
 		# 3. Apply the changes
-		if is_checked and not new_typed_array.has(tag_path):
-			new_typed_array.append(tag_path)
-		elif not is_checked and new_typed_array.has(tag_path):
-			new_typed_array.erase(tag_path)
+		if is_checked and not new_typed_array.has(tag):
+			new_typed_array.append(tag)
+		elif not is_checked and new_typed_array.has(tag):
+			new_typed_array.erase(tag)
 			
 		# 4. Sync UI tracking and emit the perfectly typed data
 		_current_tags = Array(new_typed_array)
 		emit_changed(get_edited_property(), new_typed_array if prop_val is Array else PackedStringArray(new_typed_array))
 	else:
 		if is_checked:
-			emit_changed(get_edited_property(), tag_path)
+			emit_changed(get_edited_property(), tag)
 		else:
 			emit_changed(get_edited_property(), StringName(""))
 			
@@ -267,10 +359,28 @@ func _on_tree_item_edited() -> void:
 
 
 func _on_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
-	if id != 1:
-		return
+	match id:
+		TreeItemButtonId.STRICT:
+			_on_tree_button_strict(item, column, id, mouse_button_index)
+		TreeItemButtonId.DELETE:
+			_on_tree_button_delete(item, column, id, mouse_button_index)
 
-	var tag_to_remove = StringName(item.get_metadata(0))
+
+func _on_tree_button_strict(item: TreeItem, column: int, _id: int, mouse_button_index: int) -> void:
+	var metadata: Dictionary = item.get_metadata(0)
+	var tag: StringName = metadata["tag"]
+	var tag_is_strict: bool = metadata["is_strict"]
+	var old_tag: = tag
+	var new_tag: = tag
+	var old_tag_is_strict: = tag_is_strict
+	# The intent by clicking is to switch the current value.
+	var new_tag_is_strict: = not tag_is_strict  
+
+	if old_tag_is_strict:
+		old_tag = GameplayTagUtilities.to_strict(tag)
+	if new_tag_is_strict:
+		new_tag = GameplayTagUtilities.to_strict(tag)
+
 	var prop_val = get_edited_object().get(get_edited_property())
 	var is_array_type = prop_val is Array or prop_val is PackedStringArray
 	
@@ -279,21 +389,52 @@ func _on_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_
 		var new_typed_array: Array[StringName] = []
 		if prop_val != null:
 			new_typed_array.assign(prop_val)
+
+		var tag_index: = new_typed_array.find(old_tag)
+		if tag_index > -1:
+			new_typed_array.set(tag_index, new_tag)
+
+		_current_tags = Array(new_typed_array)
+		emit_changed(get_edited_property(), new_typed_array if prop_val is Array else PackedStringArray(new_typed_array))
+		
+	elif not is_array_type and _current_tags.size() > 0 and _current_tags[0] == old_tag:
+		_current_tags.set(0, new_tag)
+		emit_changed(get_edited_property(), StringName(new_tag))
+	
+	_update_button_text()
+	_refresh_tree()
+
+
+func _on_tree_button_delete(item: TreeItem, column: int, _id: int, mouse_button_index: int) -> void:
+	var metadata: Dictionary = item.get_metadata(0)
+	var tag: StringName = metadata["tag"]
+	var tag_is_strict: bool = metadata["is_strict"]
+	var prop_val = get_edited_object().get(get_edited_property())
+	var is_array_type = prop_val is Array or prop_val is PackedStringArray
+
+	if tag_is_strict:
+		tag = GameplayTagUtilities.to_strict(tag)
+
+	if is_array_type:
+		# Break memory link with strictly typed array
+		var new_typed_array: Array[StringName] = []
+		if prop_val != null:
+			new_typed_array.assign(prop_val)
 			
-		if new_typed_array.has(tag_to_remove):
-			new_typed_array.erase(tag_to_remove)
+		if new_typed_array.has(tag):
+			new_typed_array.erase(tag)
 			
 		_current_tags = Array(new_typed_array)
 		emit_changed(get_edited_property(), new_typed_array if prop_val is Array else PackedStringArray(new_typed_array))
 		
-	elif not is_array_type and _current_tags.size() > 0 and _current_tags[0] == tag_to_remove:
+	elif not is_array_type and _current_tags.size() > 0 and _current_tags[0] == tag:
 		_current_tags.clear()
 		emit_changed(get_edited_property(), StringName(""))
 	
-	_button.text = "Tags (%d selected)" % _current_tags.size()
+	_update_button_text()
 	
-	_registry.remove_tag(tag_to_remove)
-	_set_status("Deleted tag: " + tag_to_remove, true)
+	_registry.remove_tag(tag)
+	_set_status("Deleted tag: " + tag, true)
 	_refresh_tree()
 
 
