@@ -69,7 +69,7 @@ func _ready() -> void:
 
 #region Execution & State
 ## The public entry point. Accepts an optional payload if triggered by an event.
-func try_activate(event_payload: GameplayEffectContext = null) -> bool:
+func try_activate(event_payload: Variant = null) -> bool:
 	if is_active or not owner_asc:
 		return false
 	
