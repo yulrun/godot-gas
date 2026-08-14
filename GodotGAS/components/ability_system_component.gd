@@ -44,12 +44,19 @@ signal ability_activation_failed(ability: GameplayAbility, reason: ActivationErr
 ## UI listens to this to spawn Damage Numbers, "Miss!", or "Blocked!" text.
 signal effect_received(source_asc: AbilitySystemComponent, spec: GameplayEffectSpec)
 
+@export_category("State Management")
 @export var attribute_sets: Array[AttributeSet] = []
 
 ## If false, this ASC will create a unique deep copy of its attribute sets on start.
 ## If true, it will share the exact resource memory with other entities (Unreal default is false).
 @export var share_attributes: bool = false
 
+@export_category("Networking")
+## If true, this ASC will automatically spawn a Synchronizer to handle Attributes and Tags,
+## while also intercepting and routing Inputs/Effects via RPCs for Server Authority.
+@export var is_networked: bool = false
+
+@export_category("Debugging")
 @export var debug_signal_log: bool = false
 
 ## Array of integer IDs representing currently held inputs.
@@ -83,6 +90,27 @@ func _ready() -> void:
 			if attribute_sets[i]:
 				# duplicate(true) ensures the internal AttributeData nodes are also cloned
 				attribute_sets[i] = attribute_sets[i].duplicate(true)
+	
+	# Auto-Networking Synchronization Setup
+	if is_networked:
+		var sync = MultiplayerSynchronizer.new()
+		sync.name = "GASSynchronizer"
+		var rep_config = SceneReplicationConfig.new()
+		
+		# 1. Sync Active Tags Array
+		rep_config.add_property(NodePath(".:_active_tags"))
+		
+		# 2. Dynamically map and sync all instanced Attributes!
+		for i in range(attribute_sets.size()):
+			if attribute_sets[i]:
+				var set_path = ".:attribute_sets:" + str(i)
+				for prop in attribute_sets[i].get_property_list():
+					if prop.class_name == &"AttributeData":
+						rep_config.add_property(NodePath(set_path + ":" + prop.name + ":current_value"))
+						rep_config.add_property(NodePath(set_path + ":" + prop.name + ":base_value"))
+		
+		sync.replication_config = rep_config
+		add_child(sync)
 	
 	# Debug Binding
 	if debug_signal_log:
@@ -177,9 +205,38 @@ func cleanup() -> void:
 #endregion
 
 
+#region General Networking
+## Server executes inputs sent from the network Client.
+@rpc("any_peer", "call_remote", "reliable")
+func _server_receive_input_pressed(input_id: int) -> void:
+	if is_multiplayer_authority():
+		_ability_local_input_pressed(input_id)
+
+## Server executes inputs sent from the network Client.
+@rpc("any_peer", "call_remote", "reliable")
+func _server_receive_input_released(input_id: int) -> void:
+	if is_multiplayer_authority():
+		_ability_local_input_released(input_id)
+
+## Clients execute cues broadcasted by the Server.
+@rpc("authority", "call_remote", "reliable")
+func _client_execute_cue(tag: StringName, payload: Dictionary = {}) -> void:
+	_execute_local_cue(tag, payload)
+#endregion
+
+
 #region Cues
 ## Triggers a visual/audio cue by forwarding the request to the global manager.
+## Intercepts and blasts the request to clients if running on the Server.
 func execute_cue(tag: StringName, payload: Dictionary = {}) -> void:
+	if is_networked and multiplayer.has_multiplayer_peer() and is_multiplayer_authority():
+		rpc("_client_execute_cue", tag, payload)
+		
+	_execute_local_cue(tag, payload)
+
+
+## Physically executes the cue locally.
+func _execute_local_cue(tag: StringName, payload: Dictionary = {}) -> void:
 	# We pass get_parent() as the target. 
 	# This ensures the visual cue attaches to the Character/Enemy, not the ASC node itself.
 	GameplayCueManager.execute_cue(tag, get_parent(), payload)
@@ -397,8 +454,16 @@ func apply_gameplay_effect(effect: GameplayEffect, source_asc: AbilitySystemComp
 
 
 ## The main engine entry point for an Ability to apply a live effect (Spec) to this ASC.
-## Returns the resulting ActiveGameplayEffect on success, or null on failure.
+## Intercepts and denies math calculation if executed by a network Client.
 func apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
+	if is_networked and multiplayer.has_multiplayer_peer() and not is_multiplayer_authority():
+		return null
+		
+	return _apply_effect_spec(spec)
+
+
+## Internal function that processes the actual mathematical application and state changes.
+func _apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	if not spec or not spec.effect_def:
 		return null
 		
@@ -732,7 +797,16 @@ func bind_ability_to_input(ability: GameplayAbility, new_input_id: int, unbind_o
 
 
 ## Called by a Player Controller when an input is PRESSED. Routes to the matching ability.
+## Forwards input to the Server if the player is a networked client.
 func ability_local_input_pressed(input_id: int) -> void:
+	if is_networked and multiplayer.has_multiplayer_peer() and not is_multiplayer_authority():
+		rpc_id(1, "_server_receive_input_pressed", input_id)
+		return
+		
+	_ability_local_input_pressed(input_id)
+
+
+func _ability_local_input_pressed(input_id: int) -> void:
 	if not _active_inputs.has(input_id):
 		_active_inputs.append(input_id)
 		
@@ -742,7 +816,16 @@ func ability_local_input_pressed(input_id: int) -> void:
 
 
 ## Called by a Player Controller when an input is RELEASED. Routes to the matching ability.
+## Forwards input to the Server if the player is a networked client.
 func ability_local_input_released(input_id: int) -> void:
+	if is_networked and multiplayer.has_multiplayer_peer() and not is_multiplayer_authority():
+		rpc_id(1, "_server_receive_input_released", input_id)
+		return
+		
+	_ability_local_input_released(input_id)
+
+
+func _ability_local_input_released(input_id: int) -> void:
 	if _active_inputs.has(input_id):
 		_active_inputs.erase(input_id)
 		
