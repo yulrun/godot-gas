@@ -65,6 +65,9 @@ enum StackingPolicy {
 @export var modifiers: Array[GameplayEffectModifier] = []
 
 @export_category("State Management")
+## If this effect is successfully applied, it will immediately purge any active effects on the target that grant these tags.
+## (e.g., A 'Cure' potion would list 'Status.Poison' here).
+@export var remove_effects_with_tags: Array[StringName] = []
 ## Tags granted to the target ASC for as long as this effect is active.
 ## Not used for events, but state ie: 'Status.Stunned'
 ## NOTE: Instant effects do not grant tags.

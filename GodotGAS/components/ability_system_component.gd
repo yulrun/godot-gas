@@ -413,10 +413,14 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	for tag in effect.application_required_tags:
 		if not has_tag(tag):
 			return null
-			
+	
+	# 3. The Cleanser Pattern (Purge targeted effects BEFORE evaluating new math)
+	for purge_tag in effect.remove_effects_with_tags:
+		remove_effects_with_tag(purge_tag)
+	
 	_evaluate_spec(spec)
 	
-	# 3. Handle Stacking & Refreshing
+	# 4. Handle Stacking & Refreshing
 	if effect.policy == GameplayEffect.DurationPolicy.DURATION or effect.policy == GameplayEffect.DurationPolicy.TURN_BASED:
 		if effect.stacking_policy == GameplayEffect.StackingPolicy.REFRESH_DURATION:
 			# Search to see if we already have this exact effect definition running
@@ -447,7 +451,7 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 					# Return the refreshed effect reference
 					return active_effect
 	
-	# Create a variable to hold the newly generated effect
+	# 5. Create a variable to hold the newly generated effect
 	var resulting_effect: ActiveGameplayEffect = null
 	
 	match effect.policy:
@@ -456,17 +460,17 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 		GameplayEffect.DurationPolicy.DURATION, GameplayEffect.DurationPolicy.INFINITE, GameplayEffect.DurationPolicy.TURN_BASED:
 			resulting_effect = _execute_active_spec(spec)
 	
-	# 1. Notify the Defender's UI that an effect was fully processed
+	# 6. Notify the Defender's UI that an effect was fully processed
 	var source_asc = null
 	if spec.context and spec.context.instigator:
 		source_asc = spec.context.instigator.get_node_or_null("AbilitySystemComponent") # Adjust based on your node path
 		
 	effect_received.emit(source_asc, spec)
 	
-	# Wake up any passives listening for this application!
+	# 7. Wake up any passives listening for this application!
 	_trigger_effect_events(spec)
 	
-	# Return the finalized effect reference
+	# 8. Return the finalized effect reference
 	return resulting_effect
 
 
