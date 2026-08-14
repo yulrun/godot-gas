@@ -366,25 +366,27 @@ func initialize_attribute_overrides(overrides: Dictionary[String, float]) -> voi
 
 #region Gameplay Effects Execution
 ## Applies an effect to a target ASC and broadcasts the success to our local UI/Passives.
-func apply_effect_spec_to_target(spec: GameplayEffectSpec, target_asc: AbilitySystemComponent) -> bool:
+## Returns the resulting ActiveGameplayEffect on success, or null on failure.
+func apply_effect_spec_to_target(spec: GameplayEffectSpec, target_asc: AbilitySystemComponent) -> ActiveGameplayEffect:
 	if target_asc == null:
-		return false
+		return null
 		
 	# 1. We shove the payload onto the Enemy's ASC
-	var success = target_asc.apply_effect_spec(spec)
+	var resulting_effect = target_asc.apply_effect_spec(spec)
 	
-	# 2. If the enemy successfully received the effect...
-	if success:
+	# 2. If the enemy successfully received the effect (resulting_effect evaluates to true if not null)...
+	if resulting_effect:
 		# 3. WE (The Attacker's ASC) emit the signal to our own UI and Passives!
 		effect_applied_to_target.emit(target_asc, spec)
 		
-	return success
+	return resulting_effect
 
 
 ## QoL Wrapper: Automatically packages a raw GameplayEffect into a Spec for execution.
-func apply_gameplay_effect(effect: GameplayEffect, source_asc: AbilitySystemComponent = self, effect_level: float = 1.0) -> bool:
+## Returns the resulting ActiveGameplayEffect on success, or null on failure.
+func apply_gameplay_effect(effect: GameplayEffect, source_asc: AbilitySystemComponent = self, effect_level: float = 1.0) -> ActiveGameplayEffect:
 	if not effect:
-		return false
+		return null
 	
 	# Create a basic context and spec so the developer doesn't have to do it manually every time
 	var instigator = source_asc.get_parent() if source_asc else get_parent()
@@ -395,21 +397,22 @@ func apply_gameplay_effect(effect: GameplayEffect, source_asc: AbilitySystemComp
 
 
 ## The main engine entry point for an Ability to apply a live effect (Spec) to this ASC.
-func apply_effect_spec(spec: GameplayEffectSpec) -> bool:
+## Returns the resulting ActiveGameplayEffect on success, or null on failure.
+func apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	if not spec or not spec.effect_def:
-		return false
+		return null
 		
 	var effect = spec.effect_def
 	
 	# 1. Check for Immunities (Ignored Tags)
 	for tag in effect.application_ignore_tags:
 		if has_tag(tag):
-			return false
+			return null
 	
 	# 2. Check for Conditions (Required Tags)
 	for tag in effect.application_required_tags:
 		if not has_tag(tag):
-			return false
+			return null
 			
 	_evaluate_spec(spec)
 	
@@ -441,13 +444,17 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> bool:
 					_trigger_effect_events(spec)
 					
 					# EXIT EARLY: We refreshed the old one, do not add the new one!
-					return true
+					# Return the refreshed effect reference
+					return active_effect
+	
+	# Create a variable to hold the newly generated effect
+	var resulting_effect: ActiveGameplayEffect = null
 	
 	match effect.policy:
 		GameplayEffect.DurationPolicy.INSTANT:
-			_execute_instant_spec(spec)
+			resulting_effect = _execute_instant_spec(spec)
 		GameplayEffect.DurationPolicy.DURATION, GameplayEffect.DurationPolicy.INFINITE, GameplayEffect.DurationPolicy.TURN_BASED:
-			_execute_active_spec(spec)
+			resulting_effect = _execute_active_spec(spec)
 	
 	# 1. Notify the Defender's UI that an effect was fully processed
 	var source_asc = null
@@ -459,21 +466,30 @@ func apply_effect_spec(spec: GameplayEffectSpec) -> bool:
 	# Wake up any passives listening for this application!
 	_trigger_effect_events(spec)
 	
-	return true
+	# Return the finalized effect reference
+	return resulting_effect
 
 
 ## Processes effects that happen immediately and permanently (like taking damage).
-func _execute_instant_spec(spec: GameplayEffectSpec) -> void:
+## Returns a temporary ActiveGameplayEffect so the framework registers a success (truthy), but it is NOT saved to memory.
+func _execute_instant_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	# 1. Trigger Application Cues
 	for cue_tag in spec.effect_def.application_cue_tags:
 		execute_cue(cue_tag, {"target": get_parent()})
 		
-	# 2. Actually apply the mathematical damage/healing!
-	_commit_spec_math(spec)
+	# 2. Create a temporary container to return
+	var active_effect = ActiveGameplayEffect.new(spec)
+	
+	# 3. Actually apply the mathematical damage/healing!
+	active_effect.applied_deltas = _commit_spec_math(spec)
+	
+	# We return it so the caller knows it succeeded, but we DO NOT add it to _active_effects
+	return active_effect
 
 
 ## Processes effects that stay on the character over time.
-func _execute_active_spec(spec: GameplayEffectSpec) -> void:
+## Returns the persistent ActiveGameplayEffect stored in memory.
+func _execute_active_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	# Note: Initializes using the dynamic 'spec' variable, not the static 'effect_def' variable!
 	var active_effect = ActiveGameplayEffect.new(spec) 
 	var effect = spec.effect_def
@@ -494,6 +510,9 @@ func _execute_active_spec(spec: GameplayEffectSpec) -> void:
 	
 	# Broadcast to the UI and passive listeners
 	active_effect_added.emit(active_effect)
+	
+	# Return the persistent effect so the inventory/ability can store the reference!
+	return active_effect
 
 
 ## Perfectly undoes an Active Effect's math and tags, and cleans it out of memory.
@@ -518,6 +537,20 @@ func remove_effects_with_tag(tag: StringName) -> void:
 	for i in range(_active_effects.size() - 1, -1, -1):
 		var active_effect = _active_effects[i]
 		if tag in active_effect.get_effect_def().granted_tags:
+			remove_active_effect(active_effect)
+
+
+## Removes ALL active Gameplay Effects that were applied by a specific Instigator (source node).
+func remove_effects_from_source(source_node: Node) -> void:
+	if not source_node:
+		return
+		
+	# Iterate backwards since we are removing items from the array
+	for i in range(_active_effects.size() - 1, -1, -1):
+		var active_effect = _active_effects[i]
+		
+		# Safely check if the effect has a spec, a context, and an instigator that matches our query
+		if active_effect.spec and active_effect.spec.context and active_effect.spec.context.instigator == source_node:
 			remove_active_effect(active_effect)
 #endregion
 

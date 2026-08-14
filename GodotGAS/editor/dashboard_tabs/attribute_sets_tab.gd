@@ -263,6 +263,9 @@ func _sync_theme_colors() -> void:
 	_default_attr_icon = GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_icon_star.svg")
 	_edit_icon_icon = GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_icon_edit.svg")
 	
+	# Specific Icons
+	_btn_generate_script.icon = GodotGasProjectSettings.get_svg_icon("res://addons/GodotGAS/icons/godot_gas_attributes.svg")
+	
 	# Safely apply to the parent TabContainer (Delayed by 1 frame so parent can initialize)
 	if get_parent() is TabContainer:
 		get_parent().set_tab_icon.call_deferred(get_index(), _set_icon)
@@ -286,7 +289,7 @@ func _apply_panel_colors(node: Node) -> void:
 				node.add_theme_stylebox_override("panel", _dark_panel_style)
 			elif node.get_meta("panel_type") == "header":
 				node.add_theme_stylebox_override("panel", _header_panel_style)
-				
+	
 	for child in node.get_children():
 		_apply_panel_colors(child)
 #endregion
@@ -473,7 +476,6 @@ func _refresh_attribute_tree() -> void:
 		# Value Column (1)
 		item.set_text(1, str(val))
 		item.set_editable(1, true)
-		item.set_custom_color(1, _text_accent)
 		
 		item.add_button(1, _edit_icon_icon, TreeBtn.CHANGE_ICON, false, "Change Icon")
 		item.add_button(1, get_theme_icon("ActionCopy", "EditorIcons"), TreeBtn.DUPLICATE, false, "Duplicate Attribute")
