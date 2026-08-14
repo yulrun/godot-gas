@@ -3,7 +3,7 @@
 ## Takes an array of registered StringName tags and outputs a static class 
 ## file with safe constants, enabling IDE autocomplete for tag references.
 ##
-## @meta_addon: GodotGAS 1.0.5
+## @meta_addon: GodotGAS Version 1 (See plugin version for exact version)
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
@@ -29,7 +29,7 @@ static func generate_tags_file(tags: Array[StringName]) -> void:
 	file.store_line("##")
 	file.store_line("## Used for accessing StringName references to Gameplay Tags in Scripts.")
 	file.store_line("##")
-	file.store_line("## @meta_addon: GodotGAS 1.0.5")
+	file.store_line("## @meta_addon: GodotGAS Version 1 (See plugin version for exact version)")
 	file.store_line("## @meta_author: YulRun (https://YulRun.Dev)")
 	file.store_line("## @meta_license: MIT")
 	file.store_line("")

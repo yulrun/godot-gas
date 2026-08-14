@@ -3,7 +3,7 @@
 ## Provides a UI for creating attribute categories, defining default values,
 ## assigning icons, and compiling the configuration into GDScript files.
 ##
-## @meta_addon: GodotGAS 1.0.5
+## @meta_addon: GodotGAS Version 1 (See plugin version for exact version)
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
@@ -661,7 +661,7 @@ func _on_generate_script_pressed() -> void:
 	# Build GDScript String
 	var script_text = "## An extended class for the attribute module: %s \n" %_current_set
 	script_text += "##\n"
-	script_text += "## @meta_addon: GodotGAS 1.0.5\n"
+	script_text += "## @meta_addon: GodotGAS Version 1 (See plugin version for exact version)\n"
 	script_text += "## @meta_author: YulRun (https://YulRun.Dev) & 'Your Name Here'\n"
 	script_text += "## @meta_license: MIT (Default)\n\n"
 	script_text += "@tool\nclass_name " + _current_set + "AttributeSet extends AttributeSet\n\n"

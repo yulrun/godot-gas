@@ -3,7 +3,7 @@
 ## Attach this script to the root of a scene containing your particles or 
 ## AudioStreamPlayers to manage their lifecycle and object pooling.
 ##
-## @meta_addon: GodotGAS 1.0.5
+## @meta_addon: GodotGAS Version 1 (See plugin version for exact version)
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
