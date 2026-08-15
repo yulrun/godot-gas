@@ -40,13 +40,21 @@ var period: float = 0.0
 
 ## Dictionary tracking the runtime magnitude of each modifier.
 ## Key: Attribute Name (String), Value: Magnitude (float)
-var mutated_magnitudes: Dictionary = {}
+var mutated_magnitudes: Dictionary[String, float] = {}
+
+## Dictionary tracking the runtime magnnitude of each `set_by_caller` tags.
+## Key: Attribute Name (String), Value: Magnitude (float)
+var set_by_caller_magnitudes: Dictionary[StringName, float] = {}
 # ==========================================
 
 
 #region Initialization
 ## Initializes the live effect instance and snapshots the mutable state.
-func _init(in_effect: GameplayEffect, in_context: GameplayEffectContext, in_level: float = 1.0) -> void:
+func _init(
+		in_effect: GameplayEffect,
+		in_context: GameplayEffectContext,
+		in_level: float = 1.0,
+) -> void:
 	effect_def = in_effect
 	context = in_context
 	level = in_level
@@ -60,7 +68,9 @@ func _init(in_effect: GameplayEffect, in_context: GameplayEffectContext, in_leve
 	# Pre-calculate and snapshot the base magnitudes so ExecCalcs can mutate them
 	for mod in in_effect.modifiers:
 		if mod and mod.attribute_name != "":
-			mutated_magnitudes[mod.attribute_name] = mod.calculate_magnitude(level)
+			match mod.magnitude_calculation:
+				GameplayEffectModifier.MagnitudeCalculation.SCALABLE_FLOAT:
+					mutated_magnitudes[mod.attribute_name] = mod.calculate_magnitude_scalable_float(level)
 #endregion
 
 
@@ -84,3 +94,18 @@ func inject_tag(tag: StringName) -> void:
 	if not dynamic_tags.has(tag):
 		dynamic_tags.append(tag)
 #endregion
+
+
+func set_set_by_caller_magnitude(tag: StringName, magnitude: float) -> void:
+	set_by_caller_magnitudes[tag] = magnitude	
+
+
+func get_set_by_caller_magnitude(tag: StringName, warn: = true, default: = 0.0) -> float:
+	if not set_by_caller_magnitudes.has(tag):
+		if warn:
+			push_warning("Could not find set_by_caller `%s` tag. Returning `%s` instead." % [
+		        tag,
+		        default,
+		    ])
+		return default
+	return set_by_caller_magnitudes[tag]

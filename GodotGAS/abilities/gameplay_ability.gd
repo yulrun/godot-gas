@@ -147,7 +147,11 @@ func apply_effect_to_targets(effect_res: GameplayEffect, target_data: GameplayAb
 	# The instigator and the causer both default to the persistent parent entity (e.g., the Player).
 	# Do NOT pass `self` (the transient ability) as the causer.
 	var persistent_avatar = owner_asc.get_parent()
-	var context = GameplayEffectContext.new(persistent_avatar, persistent_avatar)
+	var context = GameplayEffectContext.new(
+		persistent_avatar,
+		owner_asc,
+		persistent_avatar,
+	)
 	
 	context.target_data = target_data
 	var spec = GameplayEffectSpec.new(effect_res, context, ability_level)

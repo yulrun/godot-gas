@@ -260,8 +260,8 @@ func can_afford_cost(effect: GameplayEffect, effect_level: float = 1.0) -> bool:
 		return true
 		
 	# 1. Generate a mock spec to hold the context for our calculations
-	var context = GameplayEffectContext.new(get_parent())
-	var spec = GameplayEffectSpec.new(effect, context, effect_level)
+	var context: = GameplayEffectContext.new(get_parent(), self)
+	var spec: = GameplayEffectSpec.new(effect, context, effect_level)
 	
 	# 2. Evaluate the Spec (This runs the ExecCalcs to mutate magnitudes safely!)
 	_evaluate_spec(spec)
@@ -295,9 +295,28 @@ func cancel_abilities_with_tags(tags: Array[StringName]) -> void:
 #region Attributes
 ## Retrieves an AttributeData resource by its string name.
 func get_attribute(attribute_name: String) -> AttributeData:
-	for set in attribute_sets:
-		if attribute_name in set: 
-			var found_attr = set.get(attribute_name)
+	if attribute_name.is_empty():
+		return null
+
+
+	var attribute_name_splitted: = attribute_name.split(".")
+	var attribute_set_name: = ""
+
+	match attribute_name_splitted.size():
+		1:
+			pass
+		2:
+			attribute_set_name = attribute_name_splitted[0]
+			attribute_name = attribute_name_splitted[1]
+		_:
+			assert(false, "Invalid attribute_name.")
+
+	for attribute_set in attribute_sets:
+		if not attribute_set.is_empty() and attribute_set.name != attribute_set_name:
+			continue
+
+		if attribute_name in attribute_set: 
+			var found_attr = attribute_set.get(attribute_name)
 			if found_attr is AttributeData:
 				return found_attr
 				
@@ -356,7 +375,7 @@ func initialize_attribute_overrides(overrides: Dictionary[String, float]) -> voi
 		init_effect.modifiers.append(modifier)
 		
 	# Create Context and Spec (Passing the instigator directly into the constructor)
-	var context: GameplayEffectContext = GameplayEffectContext.new(self.get_parent())
+	var context: GameplayEffectContext = GameplayEffectContext.new(get_parent(), self)
 	var spec: GameplayEffectSpec = GameplayEffectSpec.new(init_effect, context)
 	
 	# Apply to self (This routes through the clamps and fires UI signals!)
@@ -387,9 +406,9 @@ func apply_gameplay_effect(effect: GameplayEffect, source_asc: AbilitySystemComp
 		return false
 	
 	# Create a basic context and spec so the developer doesn't have to do it manually every time
-	var instigator = source_asc.get_parent() if source_asc else get_parent()
-	var context = GameplayEffectContext.new(instigator)
-	var spec = GameplayEffectSpec.new(effect, context, effect_level)
+	var instigator: = source_asc.get_parent() if source_asc else get_parent()
+	var context: = GameplayEffectContext.new(instigator, self)
+	var spec: = GameplayEffectSpec.new(effect, context, effect_level)
 	
 	return apply_effect_spec(spec)
 
@@ -544,20 +563,30 @@ func _evaluate_spec(spec: GameplayEffectSpec) -> void:
 				projected_deltas[attr_name] = projected_deltas.get(attr_name, 0.0) + exec_deltas[attr_name]
 
 	# 2. Process Standard Modifiers
-	for mod in effect.modifiers:
+	for mod: GameplayEffectModifier in effect.modifiers:
 		if not mod or mod.attribute_name == "":
 			continue
-			
-		var attr_name = mod.attribute_name
-		# IMPORTANT: Pull magnitude from the mutated dictionary, NOT the base definition!
-		var magnitude = spec.mutated_magnitudes.get(attr_name, 0.0) 
-		
-		var current_val = 0.0
-		var attr_data = get_attribute(attr_name)
+
+		var attr_name: = mod.attribute_name
+		var magnitude: = 0.0
+
+		match mod.magnitude_calculation:
+			GameplayEffectModifier.MagnitudeCalculation.SCALABLE_FLOAT:
+				# IMPORTANT: Pull magnitude from the mutated dictionary, NOT the base definition!
+				magnitude = spec.mutated_magnitudes.get(attr_name, 0.0) 
+			GameplayEffectModifier.MagnitudeCalculation.ATTRIBUTE_BASED:
+				magnitude = spec.calculate_magnitude_attribute_based(spec.context.instigator_asc, self)
+			# GameplayEffectModifier.MagnitudeCalculation.CUSTOM_CALCULATION_CLASS:
+			# 	magnitude = spec.calculate_magnitude_custom_calculation_class(self)
+			GameplayEffectModifier.MagnitudeCalculation.SET_BY_CALLER:
+				magnitude = spec.get_set_by_caller_magnitude(mod.set_by_caller_tag)
+
+		var current_val: = 0.0
+		var attr_data: = get_attribute(attr_name)
 		if attr_data:
 			current_val = attr_data.current_value
-			
-		var delta = 0.0
+
+		var delta: = 0.0
 		match mod.operation:
 			GameplayEffectModifier.Operation.ADD:
 				delta = magnitude
@@ -568,9 +597,9 @@ func _evaluate_spec(spec: GameplayEffectSpec) -> void:
 					delta = (current_val / magnitude) - current_val
 			GameplayEffectModifier.Operation.OVERRIDE:
 				delta = magnitude - current_val
-				
+
 		projected_deltas[attr_name] = projected_deltas.get(attr_name, 0.0) + delta
-			
+
 	# Save the final projections directly into the spec
 	spec.calculated_deltas = projected_deltas
 

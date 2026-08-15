@@ -10,6 +10,13 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name AttributeSet extends Resource
 
+var _name: = &""
+var name: StringName:
+	get:
+		return _name
+	set(_value):
+		return
+
 
 #region Core Virtuals
 ## Called by the ASC right BEFORE an attribute's current_value is actually modified.

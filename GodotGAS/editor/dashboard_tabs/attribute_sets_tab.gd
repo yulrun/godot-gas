@@ -634,6 +634,7 @@ func _on_generate_script_pressed() -> void:
 	if _current_set == "": 
 		return
 	
+	var editor_settings = EditorInterface.get_editor_settings()
 	var output_dir: = GodotGasProjectSettings.get_attributes_output_dir_path()
 	var file_name = _current_set.to_snake_case() + "_attribute_set.gd"
 	var file_path = output_dir.path_join(file_name)
@@ -657,6 +658,9 @@ func _on_generate_script_pressed() -> void:
 			return
 
 	# Build GDScript String
+	var use_tabs: bool = editor_settings.get_setting("text_editor/behavior/indent/type") == 0
+	var spaces_to_insert: = editor_settings.get_setting("text_editor/behavior/indent/size") as int
+
 	var script_text = "## An extended class for the attribute module: %s \n" %_current_set
 	script_text += "##\n"
 	script_text += "## @meta_addon: GodotGAS 1.0.5\n"
@@ -683,6 +687,14 @@ func _on_generate_script_pressed() -> void:
 			
 		script_text += "var %s: AttributeData = AttributeData.new(%s)\n" % [key, str(val)]
 	
+	script_text += "\n\n"
+
+	# Init block.
+	script_text += "func _init() -> void:\n"
+	script_text += "%s_name = \"%s\"\n" % [
+		"\t" if use_tabs else " ".repeat(spaces_to_insert),
+		_current_set,
+	]
 	script_text += "\n\n"
 	
 	# Boilerplate Pipeline Block (with max_ stat auto-matching)

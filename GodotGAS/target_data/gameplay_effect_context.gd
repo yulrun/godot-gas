@@ -13,6 +13,9 @@ class_name GameplayEffectContext extends RefCounted
 ## The overarching entity that activated the ability (e.g., the Player Character).
 var instigator: Node
 
+## The instigator ability system component.
+var instigator_asc: AbilitySystemComponent = null
+
 ## The physical entity that caused the effect (e.g., a Fireball projectile). 
 ## Often defaults to the instigator if no secondary actor exists.
 var causer: Node
@@ -23,9 +26,14 @@ var target_data: GameplayAbilityTargetData
 
 #region Initialization
 ## Initializes the context. Defaults the causer to the instigator if omitted.
-func _init(_instigator: Node, _causer: Node = null) -> void:
+func _init(
+		_instigator: Node,
+		_instigator_asc: AbilitySystemComponent,
+		_causer: Node = null
+) -> void:
 	instigator = _instigator
-	causer = _causer if _causer else _instigator
+	instigator_asc = _instigator_asc
+	causer = _causer if _causer != null else _instigator
 	target_data = GameplayAbilityTargetData.new()
 #endregion
 
