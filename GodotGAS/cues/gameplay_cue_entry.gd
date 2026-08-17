@@ -13,7 +13,7 @@ class_name GameplayCueEntry extends Resource
 
 ## The gameplay tag associated with this cue. 
 ## Note: The GameplayTag inspector plugin automatically detects the variable name "tag".
-@export var tag: StringName
+@export_custom(PROPERTY_HINT_NONE, "gas::tag") var tag: StringName
 
 ## The PackedScene containing the visual or audio effects to trigger.
 @export var scene: PackedScene
