@@ -635,6 +635,10 @@ func _on_generate_script_pressed() -> void:
 		return
 	
 	var editor_settings = EditorInterface.get_editor_settings()
+	var use_tabs: bool = editor_settings.get_setting("text_editor/behavior/indent/type") == 0
+	var spaces_to_insert: = editor_settings.get_setting("text_editor/behavior/indent/size") as int
+	var tab_value: = "\t" if use_tabs else " ".repeat(spaces_to_insert)
+
 	var output_dir: = GodotGasProjectSettings.get_attributes_output_dir_path()
 	var file_name = _current_set.to_snake_case() + "_attribute_set.gd"
 	var file_path = output_dir.path_join(file_name)
@@ -658,9 +662,6 @@ func _on_generate_script_pressed() -> void:
 			return
 
 	# Build GDScript String
-	var use_tabs: bool = editor_settings.get_setting("text_editor/behavior/indent/type") == 0
-	var spaces_to_insert: = editor_settings.get_setting("text_editor/behavior/indent/size") as int
-
 	var script_text = "## An extended class for the attribute module: %s \n" %_current_set
 	script_text += "##\n"
 	script_text += "## @meta_addon: GodotGAS 1.0.5\n"
@@ -692,7 +693,7 @@ func _on_generate_script_pressed() -> void:
 	# Init block.
 	script_text += "func _init() -> void:\n"
 	script_text += "%s_name = \"%s\"\n" % [
-		"\t" if use_tabs else " ".repeat(spaces_to_insert),
+		tab_value,
 		_current_set,
 	]
 	script_text += "\n\n"
@@ -700,7 +701,7 @@ func _on_generate_script_pressed() -> void:
 	# Boilerplate Pipeline Block (with max_ stat auto-matching)
 	script_text += "## The safety pipeline: Clamps stats before they are officially changed.\n"
 	script_text += "func pre_attribute_change(attribute_name: String, proposed_value: float) -> float:\n"
-	script_text += "\tmatch attribute_name:\n"
+	script_text += "%smatch attribute_name:\n" % [tab_value]
 	
 	var has_match = false
 	for key in valid_attributes:
@@ -712,20 +713,30 @@ func _on_generate_script_pressed() -> void:
 				var min_k = "min_" + key
 				var min_val = min_k + ".current_value" if min_k in valid_attributes else "0.0"
 				
-				script_text += "\t\t\"%s\":\n" % key
-				script_text += "\t\t\treturn clamp(proposed_value, %s, %s.current_value)\n" % [min_val, max_k]
+				script_text += "%s\"%s\":\n" % [tab_value.repeat(2), key]
+				script_text += "%sreturn clamp(proposed_value, %s, %s.current_value)\n" % [
+					tab_value.repeat(3),
+					min_val,
+					max_k,
+				]
 				has_match = true
 	
 	if not has_match:
-		script_text += "\t\t_:\n"
-		script_text += "\t\t\tpass\n"
+		script_text += "%s_:\n" % [tab_value.repeat(2)]
+		script_text += "%spass\n" % [tab_value.repeat(3)]
 	
-	script_text += "\n\treturn proposed_value\n\n\n"
+	script_text += "\n"
+	script_text += "%sreturn proposed_value\n\n\n" % [tab_value]
 	
 	# Post-Attribute Change Pipeline (Handles Moving Goalposts)
 	script_text += "## The reaction pipeline: Handles moving goalposts (e.g. MaxHealth dropping below Health).\n"
-	script_text += "func post_attribute_change(asc: Node, attribute_name: String, old_value: float, new_value: float) -> void:\n"
-	script_text += "\tmatch attribute_name:\n"
+	script_text += "func post_attribute_change(\n"
+	script_text += "%sasc: Node,\n" % [tab_value.repeat(2)]
+	script_text += "%sattribute_name: String,\n" % [tab_value.repeat(2)]
+	script_text += "%sold_value: float,\n" % [tab_value.repeat(2)]
+	script_text += "%snew_value: float,\n" % [tab_value.repeat(2)]
+	script_text += ") -> void:\n"
+	script_text += "%smatch attribute_name:\n" % [tab_value]
 	
 	var has_post_match = false
 	for key in valid_attributes:
@@ -735,20 +746,28 @@ func _on_generate_script_pressed() -> void:
 			var min_k = "min_" + key
 			
 			if max_k in valid_attributes:
-				script_text += "\t\t\"%s\":\n" % max_k
-				script_text += "\t\t\tif %s.current_value > new_value:\n" % key
-				script_text += "\t\t\t\tasc._apply_attribute_change(\"%s\", new_value - %s.current_value)\n" % [key, key]
+				script_text += "%s\"%s\":\n" % [tab_value.repeat(2), max_k]
+				script_text += "%sif %s.current_value > new_value:\n" % [tab_value.repeat(3), key]
+				script_text += "%sasc._apply_attribute_change(\"%s\", new_value - %s.current_value)\n" % [
+					tab_value.repeat(4),
+					key,
+					key,
+				]
 				has_post_match = true
 				
 			if min_k in valid_attributes:
-				script_text += "\t\t\"%s\":\n" % min_k
-				script_text += "\t\t\tif %s.current_value < new_value:\n" % key
-				script_text += "\t\t\t\tasc._apply_attribute_change(\"%s\", new_value - %s.current_value)\n" % [key, key]
+				script_text += "%s\"%s\":\n" % [tab_value.repeat(2), min_k]
+				script_text += "%sif %s.current_value < new_value:\n" % [tab_value.repeat(3), key]
+				script_text += "%sasc._apply_attribute_change(\"%s\", new_value - %s.current_value)\n" % [
+					tab_value.repeat(4),
+					key,
+					key,
+				]
 				has_post_match = true
 				
 	if not has_post_match:
-		script_text += "\t\t_:\n"
-		script_text += "\t\t\tpass\n"
+		script_text += "%s_:\n" % [tab_value.repeat(2)]
+		script_text += "%spass\n" % [tab_value.repeat(3)]
 
 	# Write to Disk
 	var file = FileAccess.open(file_path, FileAccess.WRITE)
