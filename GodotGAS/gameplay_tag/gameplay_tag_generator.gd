@@ -18,6 +18,21 @@ const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/projec
 #region Code Generation
 ## Takes an array of tags and writes a static class file with constants for IDE autocomplete.
 static func generate_tags_file(tags: Array[StringName]) -> void:
+	var editor_indent: = GodotGasProjectSettings.get_text_editor_indent()
+	var tag_constant_names: Dictionary[StringName, String] = {}
+
+	# We fill tag_constant_names.
+	for tag in tags:
+		var tag_string = String(tag)
+
+		# Convert hierarchy dots into underscores for valid variable names
+		var constant_name = tag_string.replace(".", "_")
+
+		# Ensure the generated name is safe from special characters or numbers at the start
+		constant_name = _sanitize_identifier(constant_name)
+
+		tag_constant_names[tag] = constant_name
+
 	var generated_tag_script_path: = GodotGasProjectSettings.get_generated_tag_script_path()
 	var file = FileAccess.open(generated_tag_script_path, FileAccess.WRITE)
 	if not file:
@@ -35,19 +50,23 @@ static func generate_tags_file(tags: Array[StringName]) -> void:
 	file.store_line("")
 	file.store_line("@tool")
 	file.store_line("class_name GameplayTags")
+	file.store_line("extends Object")
 	file.store_line("")
 
 	for tag in tags:
-		var tag_string = String(tag)
-		
-		# Convert hierarchy dots into underscores for valid variable names
-		var constant_name = tag_string.replace(".", "_")
-		
-		# Ensure the generated name is safe from special characters or numbers at the start
-		constant_name = _sanitize_identifier(constant_name)
-		
 		# Write the constant line to the file
-		file.store_line("const %s: StringName = &\"%s\"" % [constant_name, tag_string])
+		file.store_line("const %s: StringName = &\"%s\"" % [tag_constant_names[tag], tag])
+
+	file.store_line("")
+	file.store_line("const GAMEPLAY_TAGS: Array[StringName] = [")
+	for tag in tags:
+		# Write the constant variable to the array.
+		file.store_line("%s%s," % [
+			editor_indent,
+			tag_constant_names[tag],
+		])
+		
+	file.store_line("]")
 
 	file.close()
 	print("GodotGAS: Successfully generated gameplay_tags.gd with %d constants." % tags.size())

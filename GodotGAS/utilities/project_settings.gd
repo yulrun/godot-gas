@@ -6,6 +6,11 @@ enum EditorTagsTagEditorPropertyMatchType {
 	ANYWHERE,
 }
 
+enum TextEditorBehaviorIndentType {
+	TAB = 0,
+	SPACE = 1,
+}
+
 const PROJECT_SETTINGS_NAME: = "godot_gas"
 const PROJECT_SETTINGS_NAME_EDITOR: = PROJECT_SETTINGS_NAME + "/editor"
 const PROJECT_SETTINGS_NAME_EDITOR_TAG_PROPERTY_EDITOR: = PROJECT_SETTINGS_NAME_EDITOR + "/tag_property_editor"
@@ -230,3 +235,16 @@ static func get_svg_icon(path: String) -> Texture2D:
 		return ImageTexture.create_from_image(img)
 		
 	return load(path)
+
+
+## Return the text editor indent string (a tab or multiple spaces) based on the editor settings.
+static func get_text_editor_indent() -> String:
+	if not Engine.is_editor_hint():
+		return "\t"
+
+	var editor_settings = EditorInterface.get_editor_settings()
+	var indent_type: = editor_settings.get_setting("text_editor/behavior/indent/type") \
+		as TextEditorBehaviorIndentType
+	var use_tabs = indent_type == TextEditorBehaviorIndentType.TAB
+	var spaces_to_insert: = editor_settings.get_setting("text_editor/behavior/indent/size") as int
+	return "\t" if use_tabs else " ".repeat(spaces_to_insert)

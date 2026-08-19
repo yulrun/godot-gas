@@ -634,10 +634,7 @@ func _on_generate_script_pressed() -> void:
 	if _current_set == "": 
 		return
 	
-	var editor_settings = EditorInterface.get_editor_settings()
-	var use_tabs: bool = editor_settings.get_setting("text_editor/behavior/indent/type") == 0
-	var spaces_to_insert: = editor_settings.get_setting("text_editor/behavior/indent/size") as int
-	var tab_value: = "\t" if use_tabs else " ".repeat(spaces_to_insert)
+	var tab_value: = GodotGasProjectSettings.get_text_editor_indent()
 
 	var output_dir: = GodotGasProjectSettings.get_attributes_output_dir_path()
 	var file_name = _current_set.to_snake_case() + "_attribute_set.gd"
