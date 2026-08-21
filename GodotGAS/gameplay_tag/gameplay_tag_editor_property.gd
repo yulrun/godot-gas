@@ -14,6 +14,9 @@ extends EditorProperty
 ## Addon project settings.
 const GodotGasProjectSettings: = preload("res://addons/GodotGAS/utilities/project_settings.gd")
 
+## Property type.
+var property_type: = TYPE_STRING
+
 ## The main button displayed in the inspector row.
 var _button := Button.new()
 
@@ -46,7 +49,16 @@ var _is_updating_from_tree: bool = false
 
 
 #region Initialization & Lifecycle
-func _init() -> void:
+func _init(type: = TYPE_STRING) -> void:
+	assert(
+		type == TYPE_ARRAY
+		or type == TYPE_PACKED_STRING_ARRAY
+		or type == TYPE_STRING
+		or type == TYPE_STRING_NAME,
+		"Unsupported variant type.",
+	)
+	self.property_type = property_type
+
 	_registry = load(GodotGasProjectSettings.get_registry_tag_path()) as GameplayTagRegistry
 	
 	_button.text = "Edit Tags..."
@@ -107,7 +119,7 @@ func _on_registry_changed() -> void:
 			
 	# If this specific inspector row lost a tag, update its text instantly
 	if did_change:
-		_button.text = "Tags (%d selected)" % _current_tags.size()
+		_update_button_text()
 
 
 ## Synchronizes the UI with the inspected object's data.
@@ -119,10 +131,46 @@ func _update_property() -> void:
 	elif val is StringName or val is String:
 		_current_tags = [val] if not String(val).is_empty() else []
 	
-	_button.text = "Tags (%d selected)" % _current_tags.size()
+	_update_button_text()
 	
 	if is_instance_valid(_popup) and _popup.visible and not _is_updating_from_tree:
 		_refresh_tree()
+
+
+func _update_button_text() -> void:
+	var tooltip_text: = ""
+	var current_tags: = _current_tags.duplicate()
+	current_tags.sort_custom(
+		func(a: String, b: String):
+			return a.casecmp_to(b) < 0
+	)
+
+	match property_type:
+		TYPE_STRING, \
+		TYPE_STRING_NAME:
+			if _current_tags.is_empty():
+				_button.text = "No tag"
+				tooltip_text = "No tag selected."
+			else:
+				_button.text = current_tags[0]
+				tooltip_text = "Selected tag:"
+				tooltip_text += "\n  - %s" % current_tags[0]
+		TYPE_ARRAY, \
+		TYPE_PACKED_STRING_ARRAY:
+			if _current_tags.is_empty():
+				_button.text = "No tags"
+				tooltip_text = "No tags selected."
+			else:
+				_button.text = "Tags (%d selected)" % current_tags.size()
+				var plural: = ""
+				if _current_tags.size() >= 2:
+					plural = "s"
+				tooltip_text = "Selected tag%s:" % plural
+				for current_tag in current_tags:
+					tooltip_text += "\n  - %s" % current_tag
+
+	_button.tooltip_text = tooltip_text
+
 #endregion
 
 
@@ -290,7 +338,7 @@ func _on_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_
 		_current_tags.clear()
 		emit_changed(get_edited_property(), StringName(""))
 	
-	_button.text = "Tags (%d selected)" % _current_tags.size()
+	_update_button_text()
 	
 	_registry.remove_tag(tag_to_remove)
 	_set_status("Deleted tag: " + tag_to_remove, true)
