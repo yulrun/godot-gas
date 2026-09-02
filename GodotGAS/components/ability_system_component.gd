@@ -68,6 +68,9 @@ var _active_abilities: Array[GameplayAbility] = []
 ## Dictionary tracking all currently active tags and their reference counts.
 var _active_tags: Dictionary = {}
 
+## Maps ability_tag -> ability for O(1) tag-based lookups.
+var _ability_tag_map: Dictionary = {}
+
 ## Array tracking all active gameplay effects currently applied to this component.
 var _active_effects: Array[ActiveGameplayEffect] = []
 
@@ -258,6 +261,15 @@ func remove_ability(ability: GameplayAbility) -> void:
 	_remove_active_ability(ability)
 	ability.queue_free()
 
+## Allows ability activation by ability tag
+func activate_ability_by_tag(tag: StringName) -> bool:
+	var ability = _ability_tag_map.get(tag)
+	if ability == null:
+		return false
+	if can_activate_ability(ability, true):
+		ability.try_activate(GameplayEffectContext.new(get_parent()))
+		return true
+	return false
 
 ## The Gatekeeper: ASC checks if the ability is allowed to run.
 func can_activate_ability(ability: GameplayAbility, emit_failure: bool = false) -> bool:
@@ -304,11 +316,14 @@ func can_activate_ability(ability: GameplayAbility, emit_failure: bool = false) 
 func _add_active_ability(ability: GameplayAbility) -> void:
 	if not _active_abilities.has(ability):
 		_active_abilities.append(ability)
+			_ability_tag_map[ability.ability_tag] = ability
 
 
 ## Cleans up an ability reference.
 func _remove_active_ability(ability: GameplayAbility) -> void:
 	_active_abilities.erase(ability)
+	if ability.ability_tag != &"" and _ability_tag_map.get(ability.ability_tag) == ability:
+		_ability_tag_map.erase(ability.ability_tag)
 
 
 ## Checks if the entity has enough resources to pay for a GameplayEffect cost.
