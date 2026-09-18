@@ -593,6 +593,10 @@ func remove_active_effect(active_effect: ActiveGameplayEffect, skip_array_erase:
 		var reverse_delta = -active_effect.applied_deltas[attr_name]
 		_apply_attribute_change(attr_name, reverse_delta)
 		
+	# Trigger Removal Cues
+	for cue_tag in active_effect.get_effect_def().removal_cue_tags:
+		execute_cue(cue_tag, {"target": get_parent()})
+
 	if not skip_array_erase and _active_effects.has(active_effect):
 		active_effect_removed.emit(active_effect)
 		_active_effects.erase(active_effect)

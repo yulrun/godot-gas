@@ -57,6 +57,8 @@ enum StackingPolicy {
 @export var application_cue_tags: Array[StringName] = []
 ## Cues that play every time a periodic tick occurs.
 @export var periodic_cue_tags: Array[StringName] = []
+## Cues that play exactly once when the effect is removed from a target.
+@export var removal_cue_tags: Array[StringName] = []
 
 @export_category("Attribute Modifiers")
 ## Custom mathematical scripts that run complex logic (e.g., Damage = Attack - Defense).
