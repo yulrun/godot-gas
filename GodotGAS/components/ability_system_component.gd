@@ -316,6 +316,7 @@ func can_activate_ability(ability: GameplayAbility, emit_failure: bool = false) 
 func _add_active_ability(ability: GameplayAbility) -> void:
 	if not _active_abilities.has(ability):
 		_active_abilities.append(ability)
+		if ability.ability_tag != &"":
 			_ability_tag_map[ability.ability_tag] = ability
 
 
