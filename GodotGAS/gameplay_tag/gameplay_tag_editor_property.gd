@@ -189,9 +189,30 @@ func _on_button_pressed() -> void:
 	EditorInterface.get_base_control().add_child(_popup)
 	_popup.popup_centered()
 	
+	# Dynamically match the Editor's active background color
+	var editor_theme = EditorInterface.get_editor_theme()
+	var base_color = editor_theme.get_color("base_color", "Editor")
+	var bg_style = StyleBoxFlat.new()
+	bg_style.bg_color = base_color
+	
+	# Wrap the window content in a PanelContainer to enforce the theme color
+	var bg_panel = PanelContainer.new()
+	bg_panel.add_theme_stylebox_override("panel", bg_style)
+	bg_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_popup.add_child(bg_panel)
+	
+	# Add a MarginContainer for 10px breathing room around the popup bounds
+	var margin_container = MarginContainer.new()
+	margin_container.add_theme_constant_override("margin_left", 10)
+	margin_container.add_theme_constant_override("margin_right", 10)
+	margin_container.add_theme_constant_override("margin_top", 10)
+	margin_container.add_theme_constant_override("margin_bottom", 10)
+	margin_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg_panel.add_child(margin_container)
+	
 	var main_vbox := VBoxContainer.new()
 	main_vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 8)
-	_popup.add_child(main_vbox)
+	margin_container.add_child(main_vbox)
 	
 	_search_bar = LineEdit.new()
 	_search_bar.placeholder_text = "Search tags..."
@@ -201,6 +222,7 @@ func _on_button_pressed() -> void:
 	_tree = Tree.new()
 	_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_tree.hide_root = true
+	_tree.set_column_clip_content(0, true) # Ensures inline tree buttons are never pushed off-screen
 	_tree.item_edited.connect(_on_tree_item_edited)
 	_tree.button_clicked.connect(_on_tree_button_clicked)
 	main_vbox.add_child(_tree)
