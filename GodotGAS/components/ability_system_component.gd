@@ -44,6 +44,15 @@ signal ability_activation_failed(ability: GameplayAbility, reason: ActivationErr
 ## UI listens to this to spawn Damage Numbers, "Miss!", or "Blocked!" text.
 signal effect_received(source_asc: AbilitySystemComponent, spec: GameplayEffectSpec)
 
+## Fired when an ability is added to this ASC
+## Holds reference to the ability that was added..
+signal ability_granted(ability: GameplayAbility)
+
+## Fired when an ability is removed to this ASC.
+## Holds reference to the ability that was removed.
+signal ability_removed(ability: GameplayAbility)
+
+
 @export_category("State Management")
 @export var attribute_sets: Array[AttributeSet] = []
 
@@ -260,6 +269,7 @@ func grant_ability(ability_node: GameplayAbility) -> void:
 	
 	ability_node.owner_asc = self
 	_add_active_ability(ability_node)
+	ability_granted.emit(ability_node)
 
 
 ## Grants an ability directly from a GDScript resource (Code-First approach).
@@ -278,6 +288,7 @@ func grant_ability_from_script(ability_script: Script) -> GameplayAbility:
 		
 	# Funnel it through our standard grant logic (which handles tree insertion and tracking)
 	grant_ability(ability_instance)
+	ability_granted.emit(ability_instance)
 	
 	return ability_instance
 
@@ -285,6 +296,7 @@ func grant_ability_from_script(ability_script: Script) -> GameplayAbility:
 ## Removes an ability from this ASC.
 func remove_ability(ability: GameplayAbility) -> void:
 	_remove_active_ability(ability)
+	ability_removed.emit(ability)
 	ability.queue_free()
 
 
