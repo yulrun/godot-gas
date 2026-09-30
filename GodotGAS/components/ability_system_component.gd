@@ -9,6 +9,8 @@
 @icon("res://addons/GodotGAS/icons/godot_gas_asc.svg")
 class_name AbilitySystemComponent extends Node
 
+const SHARED_ATTRIBUTE_GROUP: StringName = &"GodotGAS.SharedAttributeASCs"
+
 ## Fired the moment a tag's count goes from 0 to 1.
 signal tag_added(tag: StringName)
 
@@ -103,6 +105,8 @@ func _ready() -> void:
 			if attribute_sets[i]:
 				# duplicate(true) ensures the internal AttributeData nodes are also cloned
 				attribute_sets[i] = attribute_sets[i].duplicate(true)
+	else:
+		add_to_group(SHARED_ATTRIBUTE_GROUP)
 	
 	# Auto-Networking Synchronization Setup
 	if is_networked:
@@ -209,11 +213,11 @@ func cleanup() -> void:
 		if ability.is_active:
 			ability.abort_ability()
 			
-	# 2. Reverse math and drop tags, but SKIP the expensive array erasure
+	# 2. Remove effects and reaggregate after each removal.
 	for i in range(_active_effects.size() - 1, -1, -1):
-		remove_active_effect(_active_effects[i], true)
+		remove_active_effect(_active_effects[i])
 		
-	# 3. Clear all tracking arrays atomically in O(1) time
+	# 3. Clear remaining tracking state.
 	_active_inputs.clear()
 	_active_abilities.clear()
 	_active_tags.clear()
@@ -367,6 +371,10 @@ func can_afford_cost(effect: GameplayEffect, effect_level: float = 1.0) -> bool:
 	
 	# 2. Evaluate the Spec (This runs the ExecCalcs to mutate magnitudes safely!)
 	_evaluate_spec(spec)
+	if effect.policy == GameplayEffect.DurationPolicy.INSTANT:
+		for base_target in _calculate_base_targets(spec).values():
+			if float(base_target) < 0.0:
+				return false
 	
 	# 3. Verify the predicted math against our actual attributes
 	for attr_name in spec.calculated_deltas:
@@ -437,28 +445,116 @@ func has_attribute(attribute_name: String) -> bool:
 	return false
 
 
-## A helper to safely modify the current value of an attribute (Should not be used outside of this class).
+## Change the permanent base and then derive current from active effects.
 func _apply_attribute_change(attribute_name: String, amount: float, spec: GameplayEffectSpec = null) -> float:
 	for set in attribute_sets:
 		if attribute_name in set: 
 			var attr = set.get(attribute_name)
 			if attr is AttributeData:
-				var old_value = attr.current_value 
-				var proposed_value = old_value + amount
-				
-				var final_value = set.pre_attribute_change(attribute_name, proposed_value)
-				var actual_delta = final_value - old_value
-				
-				if final_value != old_value:
-					attr.current_value = final_value
-					attribute_changed.emit(attribute_name, old_value, final_value, spec)
-					
-					set.post_attribute_change(self, attribute_name, old_value, final_value)
-					
-				return actual_delta
+				var old_value: float = attr.current_value
+				attr.base_value = set.pre_attribute_change(attribute_name, attr.base_value + amount)
+				_recalculate_attribute(attribute_name, spec, old_value)
+				return attr.current_value - old_value
 				
 	push_warning("GodotGAS: Attempted to modify '%s', but the ASC does not possess that attribute." % attribute_name)
 	return 0.0
+
+
+func _affected_attributes(spec: GameplayEffectSpec) -> Array[String]:
+	var names: Array[String] = []
+	if spec == null or spec.period > 0.0:
+		return names
+	for name in spec.execution_deltas:
+		if not names.has(String(name)):
+			names.append(String(name))
+	for modifier in spec.evaluated_modifiers:
+		var name := String(modifier["attribute"])
+		if not names.has(name):
+			names.append(name)
+	return names
+
+
+func _aggregate_attribute_value(attribute_name: String, base_value: float, extra_spec: GameplayEffectSpec = null) -> float:
+	var addition := 0.0
+	var multiplication := 1.0
+	var division := 1.0
+	var has_override := false
+	var override_priority := -2147483648
+	var override_value := -INF
+	var specs: Array[GameplayEffectSpec] = []
+	var owners: Array[AbilitySystemComponent] = [self]
+	if share_attributes and is_inside_tree():
+		var shared_attribute := get_attribute(attribute_name)
+		for candidate in get_tree().get_nodes_in_group(SHARED_ATTRIBUTE_GROUP):
+			if candidate != self and candidate is AbilitySystemComponent and candidate.get_attribute(attribute_name) == shared_attribute:
+				owners.append(candidate)
+	for owner in owners:
+		for active_effect in owner._active_effects:
+			if active_effect.is_suppressed:
+				continue
+			for stack_spec in active_effect.stack_specs:
+				specs.append(stack_spec)
+	if extra_spec != null:
+		specs.append(extra_spec)
+	for stack_spec in specs:
+		if stack_spec.period > 0.0:
+			continue
+		addition += float(stack_spec.execution_deltas.get(attribute_name, 0.0))
+		for modifier in stack_spec.evaluated_modifiers:
+			if modifier["attribute"] != attribute_name:
+				continue
+			var magnitude: float = modifier["magnitude"]
+			match modifier["operation"]:
+				GameplayEffectModifier.Operation.ADD:
+					addition += magnitude
+				GameplayEffectModifier.Operation.MULTIPLY:
+					multiplication *= magnitude
+				GameplayEffectModifier.Operation.DIVIDE:
+					if not is_zero_approx(magnitude):
+						division *= magnitude
+				GameplayEffectModifier.Operation.OVERRIDE:
+					var priority: int = modifier["priority"]
+					if not has_override or priority > override_priority or (priority == override_priority and magnitude > override_value):
+						has_override = true
+						override_priority = priority
+						override_value = magnitude
+	return override_value if has_override else (base_value + addition) * multiplication / division
+
+
+func _recalculate_attribute(attribute_name: String, spec: GameplayEffectSpec = null, old_value_override: Variant = null) -> float:
+	var attr := get_attribute(attribute_name)
+	if attr == null:
+		return 0.0
+	var attribute_set: AttributeSet = null
+	for candidate in attribute_sets:
+		if attribute_name in candidate and candidate.get(attribute_name) == attr:
+			attribute_set = candidate
+			break
+	if attribute_set == null:
+		return 0.0
+
+	var old_value: float = attr.current_value if old_value_override == null else float(old_value_override)
+	var aggregate := _aggregate_attribute_value(attribute_name, attr.base_value)
+	var final_value := attribute_set.pre_attribute_change(attribute_name, aggregate)
+	attr.current_value = final_value
+	if not is_equal_approx(old_value, final_value):
+		attribute_changed.emit(attribute_name, old_value, final_value, spec)
+		attribute_set.post_attribute_change(self, attribute_name, old_value, final_value)
+	return final_value - old_value
+
+
+func _recalculate_effect(active_effect: ActiveGameplayEffect, spec: GameplayEffectSpec = null) -> Dictionary:
+	var deltas: Dictionary = {}
+	var names: Array[String] = []
+	for stack_spec in active_effect.stack_specs:
+		for name in _affected_attributes(stack_spec):
+			if not names.has(name):
+				names.append(name)
+	for name in names:
+		var delta := _recalculate_attribute(name, spec)
+		if not is_zero_approx(delta):
+			deltas[name] = delta
+	return deltas
 
 
 ## Takes a strongly-typed dictionary of {"attribute_name": override_value} and dynamically
@@ -578,14 +674,11 @@ func _apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 						active_effect.stack_count += 1
 						
 						if spec.period <= 0.0:
-							var new_deltas = _commit_spec_math(spec)
-							for attr_name in new_deltas:
-								active_effect.applied_deltas[attr_name] = active_effect.applied_deltas.get(attr_name, 0.0) + new_deltas[attr_name]
-							
-							# MATH TRAP FIX: If it is currently suppressed, immediately back out the newly added deltas!
-							if active_effect.is_suppressed:
-								for attr_name in new_deltas:
-									_apply_attribute_change(attr_name, -new_deltas[attr_name])
+							active_effect.stack_specs.append(spec)
+							active_effect.applied_deltas = _recalculate_effect(active_effect, spec)
+							spec.calculated_deltas = active_effect.applied_deltas.duplicate()
+						else:
+							active_effect.stack_specs.append(spec)
 					
 					# We found it! Reset its clock back to full based on the dynamically altered Spec!
 					if effect.policy == GameplayEffect.DurationPolicy.DURATION:
@@ -662,15 +755,18 @@ func _execute_active_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	for cue_tag in effect.application_cue_tags:
 		execute_cue(cue_tag, {"target": get_parent()})
 	
-	# 2. Grant Tags
-	for tag in effect.granted_tags:
-		add_tag(tag)
-		
-	# 3. Apply Math and record it to reverse later (ONLY if not periodic)
-	if spec.period <= 0.0:
-		active_effect.applied_deltas = _commit_spec_math(spec)
-			
+	# Decide initial suppression before granting tags or broadcasting math.
+	active_effect.is_suppressed = effect.ongoing_suppression_query != null and effect.ongoing_suppression_query.matches(self)
+	if not active_effect.is_suppressed:
+		for tag in effect.granted_tags:
+			add_tag(tag)
+
 	_active_effects.append(active_effect)
+	# Persistent math is derived from the active set. Periodic math is committed
+	# only when the tick occurs.
+	if spec.period <= 0.0:
+		active_effect.applied_deltas = _recalculate_effect(active_effect, spec)
+		spec.calculated_deltas = active_effect.applied_deltas.duplicate()
 	
 	# Broadcast to the UI and passive listeners
 	active_effect_added.emit(active_effect)
@@ -682,27 +778,23 @@ func _execute_active_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	return active_effect
 
 
-## Perfectly undoes an Active Effect's math and tags, and cleans it out of memory.
-func remove_active_effect(active_effect: ActiveGameplayEffect, skip_array_erase: bool = false) -> void:
-	# Only reverse tags and attribute deltas if the effect is not currently suppressed
+## Removes an active effect, then derives current from the remaining effects.
+## The legacy skip flag remains accepted for callers, but removal must erase
+## the effect immediately so aggregation sees the correct active set.
+func remove_active_effect(active_effect: ActiveGameplayEffect, _skip_array_erase: bool = false) -> void:
+	if active_effect == null or not _active_effects.has(active_effect):
+		return
+	_active_effects.erase(active_effect)
+	_recalculate_effect(active_effect, active_effect.spec)
 	if not active_effect.is_suppressed:
 		for tag in active_effect.get_effect_def().granted_tags:
 			remove_tag(tag)
-			
-		for attr_name in active_effect.applied_deltas.keys():
-			var reverse_delta = -active_effect.applied_deltas[attr_name]
-			_apply_attribute_change(attr_name, reverse_delta)
-			
+
 	# Trigger Removal Cues
 	for cue_tag in active_effect.get_effect_def().removal_cue_tags:
 		execute_cue(cue_tag, {"target": get_parent()})
 		
-	if not skip_array_erase and _active_effects.has(active_effect):
-		active_effect_removed.emit(active_effect)
-		_active_effects.erase(active_effect)
-	elif skip_array_erase:
-		# Still emit the signal for UI cleanup during a bulk wipe
-		active_effect_removed.emit(active_effect)
+	active_effect_removed.emit(active_effect)
 
 
 ## Removes ALL active Gameplay Effects that are currently granting the specified tag.
@@ -756,23 +848,19 @@ func _reevaluate_suppression_state() -> void:
 		_reevaluate_suppression_state()
 
 
-## Temporarily suspends an active effect's applied attribute deltas and granted tags.
+## Temporarily excludes an active effect's modifiers and granted tags.
 func _suppress_effect(active_effect: ActiveGameplayEffect) -> void:
 	active_effect.is_suppressed = true
-	
-	for attr_name in active_effect.applied_deltas.keys():
-		_apply_attribute_change(attr_name, -active_effect.applied_deltas[attr_name])
+	_recalculate_effect(active_effect, active_effect.spec)
 		
 	for tag in active_effect.get_effect_def().granted_tags:
 		remove_tag(tag)
 
 
-## Restores a previously suppressed active effect's attribute deltas and granted tags.
+## Restores a previously suppressed active effect's modifiers and granted tags.
 func _unsuppress_effect(active_effect: ActiveGameplayEffect) -> void:
 	active_effect.is_suppressed = false
-	
-	for attr_name in active_effect.applied_deltas.keys():
-		_apply_attribute_change(attr_name, active_effect.applied_deltas[attr_name])
+	_recalculate_effect(active_effect, active_effect.spec)
 		
 	for tag in active_effect.get_effect_def().granted_tags:
 		add_tag(tag)
@@ -781,13 +869,13 @@ func _unsuppress_effect(active_effect: ActiveGameplayEffect) -> void:
 
 #region Math & Modifiers
 
-## STEP 1: Evaluates all Executions and Modifiers to predict the final mathematical changes.
-## This populates `spec.calculated_deltas` and allows ExecCalcs to mutate duration/magnitudes safely.
+## Evaluate executions and capture modifier magnitudes once for this application.
 func _evaluate_spec(spec: GameplayEffectSpec) -> void:
-	var projected_deltas: Dictionary = {}
-	
 	if not spec or not spec.effect_def:
 		return
+	spec.execution_deltas.clear()
+	spec.evaluated_modifiers.clear()
+	spec.calculated_deltas.clear()
 		
 	var effect = spec.effect_def
 	
@@ -798,7 +886,7 @@ func _evaluate_spec(spec: GameplayEffectSpec) -> void:
 			var exec_deltas = execution.execute(spec, self)
 			
 			for attr_name in exec_deltas:
-				projected_deltas[attr_name] = projected_deltas.get(attr_name, 0.0) + exec_deltas[attr_name]
+				spec.execution_deltas[attr_name] = spec.execution_deltas.get(attr_name, 0.0) + exec_deltas[attr_name]
 
 	# 2. Process Standard Modifiers
 	for mod in effect.modifiers:
@@ -811,7 +899,9 @@ func _evaluate_spec(spec: GameplayEffectSpec) -> void:
 		# Intercept the calculation type!
 		match mod.magnitude_calculation:
 			GameplayEffectModifier.MagnitudeCalculationType.STATIC:
-				magnitude = spec.mutated_magnitudes.get(attr_name, 0.0) 
+				magnitude = mod.calculate_magnitude(spec.level)
+				if spec.mutated_magnitudes.get(attr_name, null) != spec.initial_mutated_magnitudes.get(attr_name, null):
+					magnitude = spec.mutated_magnitudes[attr_name]
 			GameplayEffectModifier.MagnitudeCalculationType.SET_BY_CALLER:
 				magnitude = spec.get_set_by_caller_magnitude(mod.set_by_caller_tag)
 			GameplayEffectModifier.MagnitudeCalculationType.ATTRIBUTE_BASED:
@@ -834,41 +924,71 @@ func _evaluate_spec(spec: GameplayEffectSpec) -> void:
 						backing_val = attr_data.current_value
 						
 				magnitude = backing_val * mod.attribute_multiplier
-		
-		var current_val = 0.0
-		var attr_data = get_attribute(attr_name)
-		if attr_data:
-			current_val = attr_data.current_value
-			
-		var delta = 0.0
-		match mod.operation:
+		spec.evaluated_modifiers.append({
+			"attribute": attr_name,
+			"operation": mod.operation,
+			"magnitude": magnitude,
+			"priority": mod.override_priority,
+		})
+	# Cost checks need the same prospective current value that commit would
+	# produce from the changed base. Persistent effects fill this after insertion.
+	if effect.policy == GameplayEffect.DurationPolicy.INSTANT or spec.period > 0.0:
+		var base_targets := _calculate_base_targets(spec)
+		for attr_name in base_targets:
+			var attr := get_attribute(attr_name)
+			if attr != null:
+				var target_base: float = base_targets[attr_name]
+				spec.calculated_deltas[attr_name] = _aggregate_attribute_value(attr_name, target_base) - attr.current_value
+	else:
+		for attr_name in _affected_attributes(spec):
+			var attr := get_attribute(attr_name)
+			if attr != null:
+				spec.calculated_deltas[attr_name] = _aggregate_attribute_value(attr_name, attr.base_value, spec) - attr.current_value
+
+
+func _calculate_base_targets(spec: GameplayEffectSpec) -> Dictionary:
+	var base_targets: Dictionary = {}
+	for attr_name in spec.execution_deltas:
+		var attr := get_attribute(attr_name)
+		if attr != null:
+			base_targets[attr_name] = attr.base_value + float(spec.execution_deltas[attr_name])
+	for modifier in spec.evaluated_modifiers:
+		var attr_name: String = modifier["attribute"]
+		var attr := get_attribute(attr_name)
+		if attr == null:
+			continue
+		var value: float = base_targets.get(attr_name, attr.base_value)
+		var magnitude: float = modifier["magnitude"]
+		match modifier["operation"]:
 			GameplayEffectModifier.Operation.ADD:
-				delta = magnitude
+				value += magnitude
 			GameplayEffectModifier.Operation.MULTIPLY:
-				delta = (current_val * magnitude) - current_val
+				value *= magnitude
 			GameplayEffectModifier.Operation.DIVIDE:
-				if magnitude != 0:
-					delta = (current_val / magnitude) - current_val
+				if not is_zero_approx(magnitude):
+					value /= magnitude
 			GameplayEffectModifier.Operation.OVERRIDE:
-				delta = magnitude - current_val
-				
-		projected_deltas[attr_name] = projected_deltas.get(attr_name, 0.0) + delta
-			
-	# Save the final projections directly into the spec
-	spec.calculated_deltas = projected_deltas
+				value = magnitude
+		base_targets[attr_name] = value
+	return base_targets
 
 
-## STEP 2: Actually applies the pre-calculated deltas to the ASC's attributes.
+## Commit instant or periodic math to the permanent base, then reaggregate.
 func _commit_spec_math(spec: GameplayEffectSpec) -> Dictionary:
 	var final_clamped_deltas: Dictionary = {}
-	
-	if not spec or spec.calculated_deltas.is_empty():
+	if not spec:
 		return final_clamped_deltas
-	
-	# Physically modify the stats
-	for attr_name in spec.calculated_deltas:
-		var actual_change = _apply_attribute_change(attr_name, spec.calculated_deltas[attr_name], spec)
-		if actual_change != 0.0:
+	var base_targets := _calculate_base_targets(spec)
+	for attr_name in base_targets:
+		var attr := get_attribute(attr_name)
+		var old_value: float = attr.current_value
+		for attribute_set in attribute_sets:
+			if attr_name in attribute_set and attribute_set.get(attr_name) == attr:
+				base_targets[attr_name] = attribute_set.pre_attribute_change(attr_name, float(base_targets[attr_name]))
+				break
+		attr.base_value = float(base_targets[attr_name])
+		var actual_change := _recalculate_attribute(attr_name, spec, old_value)
+		if not is_zero_approx(actual_change):
 			final_clamped_deltas[attr_name] = actual_change
 	
 	# Update the spec to reflect the true reality of what happened (after stats clamped)

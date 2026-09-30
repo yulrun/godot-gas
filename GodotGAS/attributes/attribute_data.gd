@@ -1,7 +1,8 @@
 ## A resource container for a single gameplay attribute.
 ##
-## Holds both the permanent base value and the temporary current value of an 
-## attribute, automatically syncing the current value when the base is updated.
+## Holds both the permanent base value and the temporary current value of an
+## attribute. The ASC derives current from base and active effects. Direct writes
+## to this resource bypass that recalculation; use ASC-mediated changes instead.
 ##
 ## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -28,8 +29,7 @@ func _init(initial_value: float = 0.0) -> void:
 func _set_base_value(new_value: float) -> void:
 	base_value = new_value
 	
-	# For now, if the base value changes (like leveling up), 
-	# we just sync the current value to it. 
-	# Later, we will add logic here to re-apply GameplayEffects.
+	# This setter also runs for direct writes outside the ASC. Only the ASC can
+	# reaggregate active effects after changing the base.
 	current_value = new_value
 #endregion

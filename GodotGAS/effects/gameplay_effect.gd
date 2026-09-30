@@ -12,8 +12,8 @@ class_name GameplayEffect extends Resource
 ## Defines the lifecycle behavior of the effect.
 enum DurationPolicy { 
 	INSTANT, # Applies math immediately and vanishes. Cannot grant tags. (e.g., Fireball Damage)
-	DURATION, # Applies math/tags for X seconds, then undoes them. (e.g., 5-second Poison)
-	INFINITE, # Applies math/tags permanently until explicitly removed. (e.g., Equipped Ring) 
+	DURATION, # Active math/tags persist for X seconds, then are removed. (e.g., 5-second Buff)
+	INFINITE, # Active math/tags persist until explicitly removed. (e.g., Equipped Ring)
 	TURN_BASED # Applies math/tags for X turns, handled discretely by an external Turn Manager.
 }
 

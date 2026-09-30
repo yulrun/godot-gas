@@ -12,9 +12,9 @@ class_name GameplayEffectModifier extends Resource
 ## Defines the mathematical operation applied to the attribute.
 enum Operation {
 	ADD,      # Adds the magnitude (use negative values for damage/subtraction)
-	MULTIPLY, # Multiplies the current value (e.g., 1.5 for a 50% increase)
-	DIVIDE,   # Divides the current value
-	OVERRIDE  # Completely replaces the current value with the magnitude
+	MULTIPLY, # Active effects multiply the summed base and additions (1.5 = +50%)
+	DIVIDE,   # Active effects divide the result after multiplication
+	OVERRIDE  # An active override replaces the aggregate with its magnitude
 }
 
 ## Defines where the modifier gets its mathematical value from.
@@ -35,6 +35,10 @@ enum AttributeSource {
 
 ## How the math should be applied.
 @export var operation: Operation = Operation.ADD
+
+## Higher priority wins when several active OVERRIDE modifiers target one attribute.
+## Equal priorities choose the higher magnitude, independent of application order.
+@export var override_priority: int = 0
 
 ## The source of the mathematical value.
 @export var magnitude_calculation: MagnitudeCalculationType = MagnitudeCalculationType.STATIC

@@ -1,7 +1,6 @@
 ## A tracked, runtime instance of a GameplayEffectSpec currently applied to an ASC.
 ##
-## Manages the state, duration, and periodic ticks of an active effect,
-## while recording applied modifiers so they can be safely reversed.
+## Manages the state, duration, and periodic ticks of an active effect.
 ##
 ## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -14,8 +13,11 @@ class_name ActiveGameplayEffect extends RefCounted
 ## This securely holds the Context, Target Data, Level, and the base Definition.
 var spec: GameplayEffectSpec
 
-## A dictionary tracking the exact flat mathematical changes this effect applied.
-## Used to perfectly reverse the math when the effect expires or is cleansed.
+## Each stack keeps the magnitudes evaluated when it was applied.
+var stack_specs: Array[GameplayEffectSpec] = []
+
+## Diagnostic snapshot of the most recent change to current values.
+## Removal and suppression reaggregate from the remaining active effects.
 ## Format: { "attribute_name": amount_changed }
 var applied_deltas: Dictionary = {}
 
@@ -35,6 +37,7 @@ var stack_count: int = 1
 #region Initialization
 func _init(in_spec: GameplayEffectSpec) -> void:
 	spec = in_spec
+	stack_specs.append(in_spec)
 	
 	var effect = spec.effect_def
 	if effect.policy == GameplayEffect.DurationPolicy.DURATION:

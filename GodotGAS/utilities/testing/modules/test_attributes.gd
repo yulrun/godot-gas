@@ -164,6 +164,29 @@ func _battery_memory_isolation_and_cloning() -> void:
 	
 	asc_c._apply_attribute_change("health", -50.0)
 	assert_eq(asc_d.get_attribute("health").current_value, 150.0, "2.09: Entity D observed stat mutation performed by Entity C")
+	var shared_add := GameplayEffect.new()
+	shared_add.policy = GameplayEffect.DurationPolicy.INFINITE
+	shared_add.granted_tags = [&"Test.SharedAdd"]
+	var shared_add_mod := GameplayEffectModifier.new()
+	shared_add_mod.attribute_name = "health"
+	shared_add_mod.operation = GameplayEffectModifier.Operation.ADD
+	shared_add_mod.magnitude = 20.0
+	shared_add.modifiers = [shared_add_mod]
+	var shared_mult := GameplayEffect.new()
+	shared_mult.policy = GameplayEffect.DurationPolicy.INFINITE
+	shared_mult.granted_tags = [&"Test.SharedMultiply"]
+	var shared_mult_mod := GameplayEffectModifier.new()
+	shared_mult_mod.attribute_name = "health"
+	shared_mult_mod.operation = GameplayEffectModifier.Operation.MULTIPLY
+	shared_mult_mod.magnitude = 0.5
+	shared_mult.modifiers = [shared_mult_mod]
+	asc_c.apply_gameplay_effect(shared_add)
+	asc_d.apply_gameplay_effect(shared_mult)
+	assert_approx(shared_set.health.current_value, 85.0, 0.0001, "2.10: Shared ASC modifiers combine on one resource")
+	asc_c.remove_effects_with_tag(&"Test.SharedAdd")
+	assert_approx(shared_set.health.current_value, 75.0, 0.0001, "2.11: Removing one ASC effect preserves the other's modifier")
+	asc_d.remove_effects_with_tag(&"Test.SharedMultiply")
+	assert_approx(shared_set.health.current_value, 150.0, 0.0001, "2.12: Removing both ASC effects restores shared base")
 	
 	asc_c.queue_free()
 	asc_d.queue_free()
@@ -233,6 +256,10 @@ func _battery_pre_change_clamping() -> void:
 	assert_eq(delta_3, 0.0, "4.11: Applying damage at 0.0 returns 0.0 actual delta")
 	assert_eq(asc.get_attribute("health").current_value, 0.0, "4.12: Health remains at 0.0")
 	assert_eq(_attr_changes.size(), 0, "4.13: attribute_changed NOT emitted when final_value == old_value")
+	assert_eq(asc.get_attribute("health").base_value, 0.0, "4.13a: Clamped damage does not push base below zero")
+	asc._apply_attribute_change("health", 10.0)
+	assert_eq(asc.get_attribute("health").current_value, 10.0, "4.13b: Small heal works after over-damage")
+	asc._apply_attribute_change("health", -10.0)
 	
 	# Over-heal clamp to max_health (100.0)
 	_reset_signal_buffers()

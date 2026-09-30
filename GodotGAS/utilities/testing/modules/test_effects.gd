@@ -32,6 +32,7 @@ func run_all_tests() -> void:
 	await _battery_attribute_based_scaling()
 	await _battery_set_by_caller()
 	await _battery_inhibition_and_cleansers()
+	await _battery_attribute_aggregation()
 	
 	print_summary()
 
@@ -88,7 +89,7 @@ func _battery_lifecycles_and_turns() -> void:
 	assert_false(asc._active_effects.has(dur_result), "1.10: Expired effect safely erased from ASC memory")
 	
 	# 3. Turn-Based Policy
-	asc.get_attribute("health").current_value = 100.0
+	asc.get_attribute("health").base_value = 100.0
 	
 	var turn_mod := GameplayEffectModifier.new()
 	turn_mod.attribute_name = "health"
@@ -114,6 +115,112 @@ func _battery_lifecycles_and_turns() -> void:
 	assert_false(asc._active_effects.has(turn_result), "1.15: Turn-based effect auto-expires after final turn")
 
 	asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 6: Order-independent active attribute aggregation
+# ---------------------------------------------------------
+func _aggregation_effect(operation: GameplayEffectModifier.Operation, magnitude: float, tag: StringName) -> GameplayEffect:
+	var effect := GameplayEffect.new()
+	effect.policy = GameplayEffect.DurationPolicy.INFINITE
+	effect.granted_tags = [tag]
+	var modifier := GameplayEffectModifier.new()
+	modifier.attribute_name = "health"
+	modifier.operation = operation
+	modifier.magnitude = magnitude
+	effect.modifiers = [modifier]
+	return effect
+
+
+func _battery_attribute_aggregation() -> void:
+	print_rich("\n[color=yellow]--- Battery 6: Attribute Aggregation ---[/color]")
+	for reverse in [false, true]:
+		var asc := AbilitySystemComponent.new()
+		asc.attribute_sets.append(EffectsAttributeSet.new())
+		add_child(asc)
+		var add := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add")
+		var multiply := _aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.5, &"Test.Multiply")
+		if reverse:
+			asc.apply_gameplay_effect(multiply)
+			asc.apply_gameplay_effect(add)
+		else:
+			asc.apply_gameplay_effect(add)
+			asc.apply_gameplay_effect(multiply)
+		assert_approx(asc.get_attribute("health").current_value, 60.0, 0.0001, "6.01: Mixed application order")
+		if reverse:
+			asc.remove_effects_with_tag(&"Test.Multiply")
+			assert_approx(asc.get_attribute("health").current_value, 120.0, 0.0001, "6.02: Remove multiplier first")
+			asc.remove_effects_with_tag(&"Test.Add")
+		else:
+			asc.remove_effects_with_tag(&"Test.Add")
+			assert_approx(asc.get_attribute("health").current_value, 50.0, 0.0001, "6.03: Remove additive first")
+			asc.remove_effects_with_tag(&"Test.Multiply")
+		assert_approx(asc.get_attribute("health").current_value, 100.0, 0.0001, "6.04: Removing both restores base")
+		asc.queue_free()
+
+	var asc := AbilitySystemComponent.new()
+	asc.attribute_sets.append(EffectsAttributeSet.new())
+	add_child(asc)
+	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.8, &"Test.M08"))
+	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.7, &"Test.M07"))
+	assert_approx(asc.get_attribute("health").current_value, 56.0, 0.0001, "6.05: Multipliers compound")
+	asc.remove_effects_with_tag(&"Test.M08")
+	assert_approx(asc.get_attribute("health").current_value, 70.0, 0.0001, "6.06: Remove older multiplier")
+	asc.remove_effects_with_tag(&"Test.M07")
+
+	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.5, &"Test.Multiply"))
+	var instant := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Instant")
+	instant.policy = GameplayEffect.DurationPolicy.INSTANT
+	asc.apply_gameplay_effect(instant)
+	assert_approx(asc.get_attribute("health").base_value, 120.0, 0.0001, "6.07: Instant effect changes base")
+	assert_approx(asc.get_attribute("health").current_value, 60.0, 0.0001, "6.08: Active effect aggregates over new base")
+	asc.remove_effects_with_tag(&"Test.Multiply")
+	assert_approx(asc.get_attribute("health").current_value, 120.0, 0.0001, "6.09: Removing buff exposes changed base")
+	asc.queue_free()
+
+	var combined_asc := AbilitySystemComponent.new()
+	combined_asc.attribute_sets.append(EffectsAttributeSet.new())
+	add_child(combined_asc)
+	var combined := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Combined")
+	var combined_multiplier := GameplayEffectModifier.new()
+	combined_multiplier.attribute_name = "health"
+	combined_multiplier.operation = GameplayEffectModifier.Operation.MULTIPLY
+	combined_multiplier.magnitude = 0.5
+	combined.modifiers.append(combined_multiplier)
+	combined_asc.apply_gameplay_effect(combined)
+	assert_approx(combined_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.10: Modifiers sharing one attribute keep their own magnitudes")
+	combined_asc.queue_free()
+
+	var rule_asc := AbilitySystemComponent.new()
+	rule_asc.attribute_sets.append(EffectsAttributeSet.new())
+	add_child(rule_asc)
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.DIVIDE, 2.0, &"Test.Divide"))
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add"))
+	assert_approx(rule_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.11: Division uses aggregated additive base")
+	rule_asc.remove_effects_with_tag(&"Test.Divide")
+	rule_asc.remove_effects_with_tag(&"Test.Add")
+	var lower_priority := _aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 70.0, &"Test.LowPriority")
+	var higher_priority := _aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 30.0, &"Test.HighPriority")
+	higher_priority.modifiers[0].override_priority = 10
+	rule_asc.apply_gameplay_effect(lower_priority)
+	rule_asc.apply_gameplay_effect(higher_priority)
+	assert_approx(rule_asc.get_attribute("health").current_value, 30.0, 0.0001, "6.12: Override priority is order independent")
+	rule_asc.remove_effects_with_tag(&"Test.HighPriority")
+	assert_approx(rule_asc.get_attribute("health").current_value, 70.0, 0.0001, "6.13: Removing priority winner exposes remaining override")
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 80.0, &"Test.EqualPriority"))
+	assert_approx(rule_asc.get_attribute("health").current_value, 80.0, 0.0001, "6.13a: Equal-priority overrides choose higher magnitude")
+	rule_asc.remove_effects_with_tag(&"Test.EqualPriority")
+	rule_asc.remove_effects_with_tag(&"Test.LowPriority")
+	var snapshot := _aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.0, &"Test.Snapshot")
+	snapshot.modifiers[0].magnitude_calculation = GameplayEffectModifier.MagnitudeCalculationType.SET_BY_CALLER
+	snapshot.modifiers[0].set_by_caller_tag = &"Test.Magnitude"
+	var snapshot_spec := GameplayEffectSpec.new(snapshot, GameplayEffectContext.new(rule_asc))
+	snapshot_spec.set_set_by_caller_magnitude(&"Test.Magnitude", 0.5)
+	rule_asc.apply_effect_spec(snapshot_spec)
+	snapshot_spec.set_set_by_caller_magnitude(&"Test.Magnitude", 0.25)
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add"))
+	assert_approx(rule_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.14: Persistent SetByCaller magnitude stays frozen")
+	rule_asc.queue_free()
 
 
 # ---------------------------------------------------------
@@ -320,5 +427,12 @@ func _battery_inhibition_and_cleansers() -> void:
 	asc.apply_gameplay_effect(cure_effect, asc, 1.0)
 	assert_false(asc._active_effects.has(active_buff), "5.07: Cleanser pattern physically stripped targeted effect")
 	assert_eq(asc.get_attribute("armor").current_value, 0.0, "5.08: Math correctly reversed upon forced cleanse")
+	asc.add_tag(&"State.Silenced")
+	var initially_suppressed = asc.apply_gameplay_effect(buff_effect, asc, 1.0)
+	assert_eq(asc.get_attribute("armor").current_value, 0.0, "5.09: Already matching suppression query prevents initial math")
+	assert_false(asc.has_tag(&"Status.Armored"), "5.10: Initially suppressed effect does not grant tags")
+	asc.remove_tag(&"State.Silenced")
+	assert_eq(asc.get_attribute("armor").current_value, 50.0, "5.11: Initially suppressed effect activates when query clears")
+	asc.remove_active_effect(initially_suppressed)
 
 	asc.queue_free()

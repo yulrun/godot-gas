@@ -23,8 +23,14 @@ var application_time: float = 0.0
 ## Tags injected dynamically at runtime by ExecCalcs or Abilities
 var dynamic_tags: Array[StringName] = []
 
-## A dictionary populated by the ASC after modifiers are applied, storing the EXACT final clamped changes (e.g., {"Health": -50.0})
+## Previewed attribute changes during evaluation; updated to actual clamped
+## changes after the effect is committed (e.g., {"Health": -50.0}).
 var calculated_deltas: Dictionary = {}
+
+## Evaluated on application and captured for active effects. Periodic effects
+## update these values again on each tick.
+var execution_deltas: Dictionary = {}
+var evaluated_modifiers: Array[Dictionary] = []
 
 # ==========================================
 # MUTABLE STATE (The Source of Truth)
@@ -41,6 +47,10 @@ var period: float = 0.0
 ## Dictionary tracking the runtime magnitude of each STATIC modifier.
 ## Key: Attribute Name (String), Value: Magnitude (float)
 var mutated_magnitudes: Dictionary = {}
+
+## Initial dictionary values let the ASC distinguish an execution's override
+## from the individual static magnitudes of modifiers sharing an attribute.
+var initial_mutated_magnitudes: Dictionary = {}
 
 ## Dictionary holding dynamic values injected by the Ability at runtime.
 ## Key: Tag (StringName), Value: Magnitude (float)
@@ -66,6 +76,7 @@ func _init(in_effect: GameplayEffect, in_context: GameplayEffectContext, in_leve
 		if mod and mod.attribute_name != "":
 			if mod.magnitude_calculation == GameplayEffectModifier.MagnitudeCalculationType.STATIC:
 				mutated_magnitudes[mod.attribute_name] = mod.calculate_magnitude(level)
+	initial_mutated_magnitudes = mutated_magnitudes.duplicate()
 #endregion
 
 
