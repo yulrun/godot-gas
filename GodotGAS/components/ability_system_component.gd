@@ -476,6 +476,7 @@ func _affected_attributes(spec: GameplayEffectSpec) -> Array[String]:
 
 func _aggregate_attribute_value(attribute_name: String, base_value: float, extra_spec: GameplayEffectSpec = null) -> float:
 	var addition := 0.0
+	var percent_addition := 0.0
 	var multiplication := 1.0
 	var division := 1.0
 	var has_override := false
@@ -507,6 +508,8 @@ func _aggregate_attribute_value(attribute_name: String, base_value: float, extra
 			match modifier["operation"]:
 				GameplayEffectModifier.Operation.ADD:
 					addition += magnitude
+				GameplayEffectModifier.Operation.PERCENT_ADD:
+					percent_addition += magnitude
 				GameplayEffectModifier.Operation.MULTIPLY:
 					multiplication *= magnitude
 				GameplayEffectModifier.Operation.DIVIDE:
@@ -518,7 +521,7 @@ func _aggregate_attribute_value(attribute_name: String, base_value: float, extra
 						has_override = true
 						override_priority = priority
 						override_value = magnitude
-	return override_value if has_override else (base_value + addition) * multiplication / division
+	return override_value if has_override else (base_value + addition) * (1.0 + percent_addition) * multiplication / division
 
 
 func _recalculate_attribute(attribute_name: String, spec: GameplayEffectSpec = null, old_value_override: Variant = null) -> float:
@@ -882,7 +885,6 @@ func _evaluate_spec(spec: GameplayEffectSpec) -> void:
 	# 1. Process Execution Calculations (Dynamic Math & Spec Mutation)
 	for execution in effect.executions:
 		if execution:
-			# Executions can edit spec.duration, spec.period, spec.mutated_magnitudes, OR return flat deltas
 			var exec_deltas = execution.execute(spec, self)
 			
 			for attr_name in exec_deltas:
@@ -906,30 +908,29 @@ func _evaluate_spec(spec: GameplayEffectSpec) -> void:
 				magnitude = spec.get_set_by_caller_magnitude(mod.set_by_caller_tag)
 			GameplayEffectModifier.MagnitudeCalculationType.ATTRIBUTE_BASED:
 				var backing_val: float = 0.0
+				var source_asc: AbilitySystemComponent = self
 				
 				if mod.attribute_source == GameplayEffectModifier.AttributeSource.SOURCE:
-					# Grab from the Instigator (Attacker)
 					if spec.context and spec.context.instigator:
-						var source_asc = spec.context.instigator as AbilitySystemComponent
+						source_asc = spec.context.instigator as AbilitySystemComponent
 						if not source_asc:
 							source_asc = spec.context.instigator.get_node_or_null("AbilitySystemComponent")
-						if source_asc:
-							var attr_data = source_asc.get_attribute(mod.backing_attribute_name)
-							if attr_data:
-								backing_val = attr_data.current_value
-				else:
-					# Grab from the Target (Defender)
-					var attr_data = get_attribute(mod.backing_attribute_name)
+							
+				if source_asc:
+					var attr_data = source_asc.get_attribute(mod.backing_attribute_name)
 					if attr_data:
-						backing_val = attr_data.current_value
+						# Capture Type Engine Integration
+						backing_val = attr_data.current_value if mod.attribute_capture_type == GameplayEffectModifier.AttributeCaptureType.CURRENT_VALUE else attr_data.base_value
 						
 				magnitude = backing_val * mod.attribute_multiplier
+				
 		spec.evaluated_modifiers.append({
 			"attribute": attr_name,
 			"operation": mod.operation,
 			"magnitude": magnitude,
 			"priority": mod.override_priority,
 		})
+		
 	# Cost checks need the same prospective current value that commit would
 	# produce from the changed base. Persistent effects fill this after insertion.
 	if effect.policy == GameplayEffect.DurationPolicy.INSTANT or spec.period > 0.0:
@@ -962,6 +963,8 @@ func _calculate_base_targets(spec: GameplayEffectSpec) -> Dictionary:
 		match modifier["operation"]:
 			GameplayEffectModifier.Operation.ADD:
 				value += magnitude
+			GameplayEffectModifier.Operation.PERCENT_ADD:
+				value += value * magnitude
 			GameplayEffectModifier.Operation.MULTIPLY:
 				value *= magnitude
 			GameplayEffectModifier.Operation.DIVIDE:

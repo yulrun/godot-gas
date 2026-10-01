@@ -33,6 +33,7 @@ func run_all_tests() -> void:
 	await _battery_set_by_caller()
 	await _battery_inhibition_and_cleansers()
 	await _battery_attribute_aggregation()
+	await _battery_capture_and_percent_add()
 	
 	print_summary()
 
@@ -117,110 +118,6 @@ func _battery_lifecycles_and_turns() -> void:
 	asc.queue_free()
 
 
-# ---------------------------------------------------------
-# Battery 6: Order-independent active attribute aggregation
-# ---------------------------------------------------------
-func _aggregation_effect(operation: GameplayEffectModifier.Operation, magnitude: float, tag: StringName) -> GameplayEffect:
-	var effect := GameplayEffect.new()
-	effect.policy = GameplayEffect.DurationPolicy.INFINITE
-	effect.granted_tags = [tag]
-	var modifier := GameplayEffectModifier.new()
-	modifier.attribute_name = "health"
-	modifier.operation = operation
-	modifier.magnitude = magnitude
-	effect.modifiers = [modifier]
-	return effect
-
-
-func _battery_attribute_aggregation() -> void:
-	print_rich("\n[color=yellow]--- Battery 6: Attribute Aggregation ---[/color]")
-	for reverse in [false, true]:
-		var asc := AbilitySystemComponent.new()
-		asc.attribute_sets.append(EffectsAttributeSet.new())
-		add_child(asc)
-		var add := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add")
-		var multiply := _aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.5, &"Test.Multiply")
-		if reverse:
-			asc.apply_gameplay_effect(multiply)
-			asc.apply_gameplay_effect(add)
-		else:
-			asc.apply_gameplay_effect(add)
-			asc.apply_gameplay_effect(multiply)
-		assert_approx(asc.get_attribute("health").current_value, 60.0, 0.0001, "6.01: Mixed application order")
-		if reverse:
-			asc.remove_effects_with_tag(&"Test.Multiply")
-			assert_approx(asc.get_attribute("health").current_value, 120.0, 0.0001, "6.02: Remove multiplier first")
-			asc.remove_effects_with_tag(&"Test.Add")
-		else:
-			asc.remove_effects_with_tag(&"Test.Add")
-			assert_approx(asc.get_attribute("health").current_value, 50.0, 0.0001, "6.03: Remove additive first")
-			asc.remove_effects_with_tag(&"Test.Multiply")
-		assert_approx(asc.get_attribute("health").current_value, 100.0, 0.0001, "6.04: Removing both restores base")
-		asc.queue_free()
-
-	var asc := AbilitySystemComponent.new()
-	asc.attribute_sets.append(EffectsAttributeSet.new())
-	add_child(asc)
-	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.8, &"Test.M08"))
-	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.7, &"Test.M07"))
-	assert_approx(asc.get_attribute("health").current_value, 56.0, 0.0001, "6.05: Multipliers compound")
-	asc.remove_effects_with_tag(&"Test.M08")
-	assert_approx(asc.get_attribute("health").current_value, 70.0, 0.0001, "6.06: Remove older multiplier")
-	asc.remove_effects_with_tag(&"Test.M07")
-
-	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.5, &"Test.Multiply"))
-	var instant := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Instant")
-	instant.policy = GameplayEffect.DurationPolicy.INSTANT
-	asc.apply_gameplay_effect(instant)
-	assert_approx(asc.get_attribute("health").base_value, 120.0, 0.0001, "6.07: Instant effect changes base")
-	assert_approx(asc.get_attribute("health").current_value, 60.0, 0.0001, "6.08: Active effect aggregates over new base")
-	asc.remove_effects_with_tag(&"Test.Multiply")
-	assert_approx(asc.get_attribute("health").current_value, 120.0, 0.0001, "6.09: Removing buff exposes changed base")
-	asc.queue_free()
-
-	var combined_asc := AbilitySystemComponent.new()
-	combined_asc.attribute_sets.append(EffectsAttributeSet.new())
-	add_child(combined_asc)
-	var combined := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Combined")
-	var combined_multiplier := GameplayEffectModifier.new()
-	combined_multiplier.attribute_name = "health"
-	combined_multiplier.operation = GameplayEffectModifier.Operation.MULTIPLY
-	combined_multiplier.magnitude = 0.5
-	combined.modifiers.append(combined_multiplier)
-	combined_asc.apply_gameplay_effect(combined)
-	assert_approx(combined_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.10: Modifiers sharing one attribute keep their own magnitudes")
-	combined_asc.queue_free()
-
-	var rule_asc := AbilitySystemComponent.new()
-	rule_asc.attribute_sets.append(EffectsAttributeSet.new())
-	add_child(rule_asc)
-	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.DIVIDE, 2.0, &"Test.Divide"))
-	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add"))
-	assert_approx(rule_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.11: Division uses aggregated additive base")
-	rule_asc.remove_effects_with_tag(&"Test.Divide")
-	rule_asc.remove_effects_with_tag(&"Test.Add")
-	var lower_priority := _aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 70.0, &"Test.LowPriority")
-	var higher_priority := _aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 30.0, &"Test.HighPriority")
-	higher_priority.modifiers[0].override_priority = 10
-	rule_asc.apply_gameplay_effect(lower_priority)
-	rule_asc.apply_gameplay_effect(higher_priority)
-	assert_approx(rule_asc.get_attribute("health").current_value, 30.0, 0.0001, "6.12: Override priority is order independent")
-	rule_asc.remove_effects_with_tag(&"Test.HighPriority")
-	assert_approx(rule_asc.get_attribute("health").current_value, 70.0, 0.0001, "6.13: Removing priority winner exposes remaining override")
-	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 80.0, &"Test.EqualPriority"))
-	assert_approx(rule_asc.get_attribute("health").current_value, 80.0, 0.0001, "6.13a: Equal-priority overrides choose higher magnitude")
-	rule_asc.remove_effects_with_tag(&"Test.EqualPriority")
-	rule_asc.remove_effects_with_tag(&"Test.LowPriority")
-	var snapshot := _aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.0, &"Test.Snapshot")
-	snapshot.modifiers[0].magnitude_calculation = GameplayEffectModifier.MagnitudeCalculationType.SET_BY_CALLER
-	snapshot.modifiers[0].set_by_caller_tag = &"Test.Magnitude"
-	var snapshot_spec := GameplayEffectSpec.new(snapshot, GameplayEffectContext.new(rule_asc))
-	snapshot_spec.set_set_by_caller_magnitude(&"Test.Magnitude", 0.5)
-	rule_asc.apply_effect_spec(snapshot_spec)
-	snapshot_spec.set_set_by_caller_magnitude(&"Test.Magnitude", 0.25)
-	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add"))
-	assert_approx(rule_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.14: Persistent SetByCaller magnitude stays frozen")
-	rule_asc.queue_free()
 
 
 # ---------------------------------------------------------
@@ -435,4 +332,194 @@ func _battery_inhibition_and_cleansers() -> void:
 	assert_eq(asc.get_attribute("armor").current_value, 50.0, "5.11: Initially suppressed effect activates when query clears")
 	asc.remove_active_effect(initially_suppressed)
 
+	asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 6: Order-independent active attribute aggregation
+# ---------------------------------------------------------
+func _aggregation_effect(operation: GameplayEffectModifier.Operation, magnitude: float, tag: StringName) -> GameplayEffect:
+	var effect := GameplayEffect.new()
+	effect.policy = GameplayEffect.DurationPolicy.INFINITE
+	effect.granted_tags = [tag]
+	var modifier := GameplayEffectModifier.new()
+	modifier.attribute_name = "health"
+	modifier.operation = operation
+	modifier.magnitude = magnitude
+	effect.modifiers = [modifier]
+	return effect
+
+
+func _battery_attribute_aggregation() -> void:
+	print_rich("\n[color=yellow]--- Battery 6: Attribute Aggregation ---[/color]")
+	for reverse in [false, true]:
+		var asc := AbilitySystemComponent.new()
+		asc.attribute_sets.append(EffectsAttributeSet.new())
+		add_child(asc)
+		var add := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add")
+		var multiply := _aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.5, &"Test.Multiply")
+		if reverse:
+			asc.apply_gameplay_effect(multiply)
+			asc.apply_gameplay_effect(add)
+		else:
+			asc.apply_gameplay_effect(add)
+			asc.apply_gameplay_effect(multiply)
+		assert_approx(asc.get_attribute("health").current_value, 60.0, 0.0001, "6.01: Mixed application order")
+		if reverse:
+			asc.remove_effects_with_tag(&"Test.Multiply")
+			assert_approx(asc.get_attribute("health").current_value, 120.0, 0.0001, "6.02: Remove multiplier first")
+			asc.remove_effects_with_tag(&"Test.Add")
+		else:
+			asc.remove_effects_with_tag(&"Test.Add")
+			assert_approx(asc.get_attribute("health").current_value, 50.0, 0.0001, "6.03: Remove additive first")
+			asc.remove_effects_with_tag(&"Test.Multiply")
+		assert_approx(asc.get_attribute("health").current_value, 100.0, 0.0001, "6.04: Removing both restores base")
+		asc.queue_free()
+
+	var asc := AbilitySystemComponent.new()
+	asc.attribute_sets.append(EffectsAttributeSet.new())
+	add_child(asc)
+	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.8, &"Test.M08"))
+	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.7, &"Test.M07"))
+	assert_approx(asc.get_attribute("health").current_value, 56.0, 0.0001, "6.05: Multipliers compound")
+	asc.remove_effects_with_tag(&"Test.M08")
+	assert_approx(asc.get_attribute("health").current_value, 70.0, 0.0001, "6.06: Remove older multiplier")
+	asc.remove_effects_with_tag(&"Test.M07")
+
+	asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.5, &"Test.Multiply"))
+	var instant := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Instant")
+	instant.policy = GameplayEffect.DurationPolicy.INSTANT
+	asc.apply_gameplay_effect(instant)
+	assert_approx(asc.get_attribute("health").base_value, 120.0, 0.0001, "6.07: Instant effect changes base")
+	assert_approx(asc.get_attribute("health").current_value, 60.0, 0.0001, "6.08: Active effect aggregates over new base")
+	asc.remove_effects_with_tag(&"Test.Multiply")
+	assert_approx(asc.get_attribute("health").current_value, 120.0, 0.0001, "6.09: Removing buff exposes changed base")
+	asc.queue_free()
+
+	var combined_asc := AbilitySystemComponent.new()
+	combined_asc.attribute_sets.append(EffectsAttributeSet.new())
+	add_child(combined_asc)
+	var combined := _aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Combined")
+	var combined_multiplier := GameplayEffectModifier.new()
+	combined_multiplier.attribute_name = "health"
+	combined_multiplier.operation = GameplayEffectModifier.Operation.MULTIPLY
+	combined_multiplier.magnitude = 0.5
+	combined.modifiers.append(combined_multiplier)
+	combined_asc.apply_gameplay_effect(combined)
+	assert_approx(combined_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.10: Modifiers sharing one attribute keep their own magnitudes")
+	combined_asc.queue_free()
+
+	var rule_asc := AbilitySystemComponent.new()
+	rule_asc.attribute_sets.append(EffectsAttributeSet.new())
+	add_child(rule_asc)
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.DIVIDE, 2.0, &"Test.Divide"))
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add"))
+	assert_approx(rule_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.11: Division uses aggregated additive base")
+	rule_asc.remove_effects_with_tag(&"Test.Divide")
+	rule_asc.remove_effects_with_tag(&"Test.Add")
+	var lower_priority := _aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 70.0, &"Test.LowPriority")
+	var higher_priority := _aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 30.0, &"Test.HighPriority")
+	higher_priority.modifiers[0].override_priority = 10
+	rule_asc.apply_gameplay_effect(lower_priority)
+	rule_asc.apply_gameplay_effect(higher_priority)
+	assert_approx(rule_asc.get_attribute("health").current_value, 30.0, 0.0001, "6.12: Override priority is order independent")
+	rule_asc.remove_effects_with_tag(&"Test.HighPriority")
+	assert_approx(rule_asc.get_attribute("health").current_value, 70.0, 0.0001, "6.13: Removing priority winner exposes remaining override")
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.OVERRIDE, 80.0, &"Test.EqualPriority"))
+	assert_approx(rule_asc.get_attribute("health").current_value, 80.0, 0.0001, "6.13a: Equal-priority overrides choose higher magnitude")
+	rule_asc.remove_effects_with_tag(&"Test.EqualPriority")
+	rule_asc.remove_effects_with_tag(&"Test.LowPriority")
+	var snapshot := _aggregation_effect(GameplayEffectModifier.Operation.MULTIPLY, 0.0, &"Test.Snapshot")
+	snapshot.modifiers[0].magnitude_calculation = GameplayEffectModifier.MagnitudeCalculationType.SET_BY_CALLER
+	snapshot.modifiers[0].set_by_caller_tag = &"Test.Magnitude"
+	var snapshot_spec := GameplayEffectSpec.new(snapshot, GameplayEffectContext.new(rule_asc))
+	snapshot_spec.set_set_by_caller_magnitude(&"Test.Magnitude", 0.5)
+	rule_asc.apply_effect_spec(snapshot_spec)
+	snapshot_spec.set_set_by_caller_magnitude(&"Test.Magnitude", 0.25)
+	rule_asc.apply_gameplay_effect(_aggregation_effect(GameplayEffectModifier.Operation.ADD, 20.0, &"Test.Add"))
+	assert_approx(rule_asc.get_attribute("health").current_value, 60.0, 0.0001, "6.14: Persistent SetByCaller magnitude stays frozen")
+	rule_asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 7: Capture Types & Percent Add Aggregation
+# ---------------------------------------------------------
+func _battery_capture_and_percent_add() -> void:
+	print_rich("\n[color=yellow]--- Battery 7: Capture Types & Percent Add ---[/color]")
+	
+	var asc := AbilitySystemComponent.new()
+	asc.attribute_sets.append(EffectsAttributeSet.new())
+	add_child(asc)
+	
+	# Set a clean base of 100 Health and 0 Armor
+	asc.get_attribute("health").base_value = 100.0
+	asc.get_attribute("armor").base_value = 0.0
+	
+	# 1. Verify PERCENT_ADD Aggregation Math
+	# Formula: (Base + FlatAdd) * (1.0 + Sum(PercentAdd)) * Product(Multiply)
+	var flat_add := GameplayEffect.new()
+	flat_add.policy = GameplayEffect.DurationPolicy.INFINITE
+	var flat_mod := GameplayEffectModifier.new()
+	flat_mod.attribute_name = "health"
+	flat_mod.operation = GameplayEffectModifier.Operation.ADD
+	flat_mod.magnitude = 20.0
+	flat_add.modifiers.append(flat_mod)
+	
+	var pct_add_1 := GameplayEffect.new()
+	pct_add_1.policy = GameplayEffect.DurationPolicy.INFINITE
+	var pct_mod_1 := GameplayEffectModifier.new()
+	pct_mod_1.attribute_name = "health"
+	pct_mod_1.operation = GameplayEffectModifier.Operation.PERCENT_ADD
+	pct_mod_1.magnitude = 0.5 # +50%
+	pct_add_1.modifiers.append(pct_mod_1)
+	
+	var pct_add_2 := GameplayEffect.new()
+	pct_add_2.policy = GameplayEffect.DurationPolicy.INFINITE
+	var pct_mod_2 := GameplayEffectModifier.new()
+	pct_mod_2.attribute_name = "health"
+	pct_mod_2.operation = GameplayEffectModifier.Operation.PERCENT_ADD
+	pct_mod_2.magnitude = 0.2 # +20%
+	pct_add_2.modifiers.append(pct_mod_2)
+	
+	asc.apply_gameplay_effect(flat_add)
+	asc.apply_gameplay_effect(pct_add_1)
+	assert_approx(asc.get_attribute("health").current_value, 180.0, 0.0001, "7.01: PERCENT_ADD correctly scales off (Base + Flat) -> (100 + 20) * 1.5")
+	
+	asc.apply_gameplay_effect(pct_add_2)
+	assert_approx(asc.get_attribute("health").current_value, 204.0, 0.0001, "7.02: Multiple PERCENT_ADD modifiers stack additively -> 120 * (1.0 + 0.5 + 0.2)")
+	
+	# 2. Verify AttributeCaptureType (Current vs Base)
+	# Current buffed health is exactly 204.0. Base is exactly 100.0.
+	var capture_current_mod := GameplayEffectModifier.new()
+	capture_current_mod.attribute_name = "armor"
+	capture_current_mod.operation = GameplayEffectModifier.Operation.ADD
+	capture_current_mod.magnitude_calculation = GameplayEffectModifier.MagnitudeCalculationType.ATTRIBUTE_BASED
+	capture_current_mod.attribute_source = GameplayEffectModifier.AttributeSource.TARGET
+	capture_current_mod.backing_attribute_name = "health"
+	capture_current_mod.attribute_capture_type = GameplayEffectModifier.AttributeCaptureType.CURRENT_VALUE
+	capture_current_mod.attribute_multiplier = 0.1 # 10%
+	
+	var effect_current := GameplayEffect.new()
+	effect_current.policy = GameplayEffect.DurationPolicy.INSTANT
+	effect_current.modifiers.append(capture_current_mod)
+	
+	asc.apply_gameplay_effect(effect_current)
+	assert_approx(asc.get_attribute("armor").current_value, 20.4, 0.0001, "7.03: CURRENT_VALUE capture scales off actively buffed total (204 * 0.1)")
+	
+	var capture_base_mod := GameplayEffectModifier.new()
+	capture_base_mod.attribute_name = "armor"
+	capture_base_mod.operation = GameplayEffectModifier.Operation.OVERRIDE 
+	capture_base_mod.magnitude_calculation = GameplayEffectModifier.MagnitudeCalculationType.ATTRIBUTE_BASED
+	capture_base_mod.attribute_source = GameplayEffectModifier.AttributeSource.TARGET
+	capture_base_mod.backing_attribute_name = "health"
+	capture_base_mod.attribute_capture_type = GameplayEffectModifier.AttributeCaptureType.BASE_VALUE
+	capture_base_mod.attribute_multiplier = 0.1 # 10%
+	
+	var effect_base := GameplayEffect.new()
+	effect_base.policy = GameplayEffect.DurationPolicy.INSTANT
+	effect_base.modifiers.append(capture_base_mod)
+	
+	asc.apply_gameplay_effect(effect_base)
+	assert_approx(asc.get_attribute("armor").current_value, 10.0, 0.0001, "7.04: BASE_VALUE capture ignores active buffs and overrides using unbuffed base (100 * 0.1)")
+	
 	asc.queue_free()

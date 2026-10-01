@@ -10,11 +10,13 @@
 class_name GameplayEffectModifier extends Resource
 
 ## Defines the mathematical operation applied to the attribute.
+## Formula: Current = (Base + ADD) * (1.0 + PERCENT_ADD) * MULTIPLY / DIVIDE
 enum Operation {
-	ADD,      # Adds the magnitude (use negative values for damage/subtraction)
-	MULTIPLY, # Active effects multiply the summed base and additions (1.5 = +50%)
-	DIVIDE,   # Active effects divide the result after multiplication
-	OVERRIDE  # An active override replaces the aggregate with its magnitude
+	ADD,         # Flat additions applied BEFORE percentages (+20 Ring of Health)
+	PERCENT_ADD, # Additive percentages scaling off (Base + ADD) (+0.5 and +0.2 = +0.7)
+	MULTIPLY,    # Multiplicative percentages applied to the running total (1.5 * 1.2 = 1.8)
+	DIVIDE,      # Division applied to the final calculated total
+	OVERRIDE     # Hard stat override, bypassing all other math
 }
 
 ## Defines where the modifier gets its mathematical value from.
@@ -28,6 +30,12 @@ enum MagnitudeCalculationType {
 enum AttributeSource {
 	SOURCE, # The entity that cast the effect
 	TARGET  # The entity receiving the effect
+}
+
+## Defines whether an Attribute-Based modifier reads the buffed total or the unbuffed base.
+enum AttributeCaptureType {
+	CURRENT_VALUE, # The running, buffed total
+	BASE_VALUE     # The permanent, unbuffed base stat
 }
 
 ## The exact variable name of the attribute in the AttributeSet (e.g., "health" or "mana").
@@ -62,6 +70,8 @@ enum AttributeSource {
 @export var attribute_source: AttributeSource = AttributeSource.SOURCE
 ## The exact name of the attribute to scale off of (e.g., "attack_power").
 @export var backing_attribute_name: String = ""
+## Determines if the modifier scales off the target's currently buffed stat or unbuffed base stat.
+@export var attribute_capture_type: AttributeCaptureType = AttributeCaptureType.CURRENT_VALUE
 ## A multiplier applied to the fetched attribute's current value (e.g., 1.5 * AttackPower).
 @export var attribute_multiplier: float = 1.0
 
@@ -71,12 +81,8 @@ enum AttributeSource {
 ## NOTE: Only runs if the calculation type is STATIC.
 func calculate_magnitude(level: float = 1.0) -> float:
 	if scaling_curve:
-		# Godot curves evaluate between X=0.0 and X=1.0 by default, but we can sample 
-		# beyond 1.0 if the curve domain is set up for it. 
-		# We sample the curve, then multiply it by the base magnitude.
 		var curve_value = scaling_curve.sample(level)
 		return curve_value * magnitude
 		
-	# If no curve, just return the flat static number
 	return magnitude
 #endregion
