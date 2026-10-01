@@ -172,7 +172,7 @@ func _combat_integration_phase(att_asc: IntegrationASC, attacker: Node, def_asc:
 	
 	# Scenario 5: Resource Block
 	att_asc.remove_effects_with_tag(&"State.Cooldown.Missile")
-	att_asc.get_attribute("mana").current_value = 10.0
+	att_asc.get_attribute("mana").base_value = 10.0
 	var cast_3 = await missile.try_activate(context)
 	assert_false(cast_3, "05. Gatekeeper successfully blocks due to insufficient resources")
 
@@ -235,7 +235,7 @@ func _combat_integration_phase(att_asc: IntegrationASC, attacker: Node, def_asc:
 	await get_tree().process_frame # Let channel begin
 	
 	# Scenario 11: Hierarchical Blocking
-	att_asc.get_attribute("mana").current_value = 100.0
+	att_asc.get_attribute("mana").base_value = 100.0
 	att_asc.remove_effects_with_tag(&"State.Cooldown.Missile")
 	var cast_blocked = await missile.try_activate()
 	assert_false(cast_blocked, "11. Hierarchical blocking matrix successfully denied cast")
@@ -283,7 +283,7 @@ func _combat_integration_phase(att_asc: IntegrationASC, attacker: Node, def_asc:
 	multi_context.target_data.append_node(defender)
 	multi_context.target_data.append_node(attacker) # Hit self too
 	
-	att_asc.get_attribute("mana").current_value = 100.0
+	att_asc.get_attribute("mana").base_value = 100.0
 	await missile.try_activate(multi_context)
 	assert_eq(missile.hit_targets, 2, "16. TargetData correctly captured and routed to multiple entities")
 	

@@ -18,6 +18,10 @@ This README provides a high-level overview. For the complete setup guide, deep d
 
 **[GodotGAS Official Documentation](https://www.yulrun.dev/GodotGAS/)**
 
+For the attribute aggregation behavior in this version, see the local
+**[Attribute and Effect Math Guide](docs/attribute-aggregation.md)**. It covers
+modifier order, effect removal, stacking, overrides, and shared attributes.
+
 ---
 
 ## Core Features
@@ -25,6 +29,7 @@ This README provides a high-level overview. For the complete setup guide, deep d
 * **The Ability System Component (ASC):** The central state manager and event bus for your entities. It routes payloads, manages active effect lifecycles (with safe `cleanup()` teardowns), and broadcasts isolated signals (`attribute_changed`, `effect_received`) to keep your UI completely decoupled from combat math.
 * **Strict Gameplay Tags:** Hierarchical state tracking (e.g., `Status.Stunned`, `Event.Damage.Critical`) utilizing optimized `StringName` comparisons. The framework auto-generates a static `GameplayTags` class for safe IDE autocomplete and features strict Regex validation to keep your tags pristine.
 * **Execution Calculations (ExecCalcs):** Move beyond simple modifiers. Write custom mathematical formulas that read live stats from both the Attacker and the Defender simultaneously (e.g., `Damage = Attacker.AttackPower - Defender.Armor`).
+* **Order-Independent Active Modifiers:** Current attributes are recalculated from their base value and the active effect set. Adding or removing the same persistent modifiers in different orders produces the same result, within floating-point tolerance.
 * **Object-Pooled Gameplay Cues:** A highly efficient, Variant-based Object Pool managed by the global `GameplayCueManager`. Fire off visual effects, audio, and floating combat text safely without instantiation micro-stutters or memory leaks.
 * **Decoupled Payload Pipeline:** A structured data flow routing `TargetData` -> `GameplayEffectContext` -> `GameplayEffectSpec` to guarantee accurate calculations and instigator/causer tracking across the network.
 * **Data-Driven Effect Stacking:** An elegant, built-in solution for stacking policies. Developers can easily manage stacking by utilizing arrays like `application_ignore_tags` directly within standard `GameplayEffect` resources.

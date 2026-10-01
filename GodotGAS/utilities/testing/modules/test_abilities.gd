@@ -181,6 +181,42 @@ func _battery_2_costs_cooldowns_and_queries() -> void:
 	
 	asc.queue_free()
 
+	# Cost prediction uses the prospective base plus active modifiers.
+	var buffed_asc := AbilitiesTestASC.new()
+	buffed_asc.attribute_sets.append(AbilitiesAttributeSet.new())
+	add_child(buffed_asc)
+	var buff_mod := GameplayEffectModifier.new()
+	buff_mod.attribute_name = "mana"
+	buff_mod.operation = GameplayEffectModifier.Operation.MULTIPLY
+	buff_mod.magnitude = 0.5
+	var buff_effect := GameplayEffect.new()
+	buff_effect.policy = GameplayEffect.DurationPolicy.INFINITE
+	buff_effect.modifiers.append(buff_mod)
+	buffed_asc.apply_gameplay_effect(buff_effect)
+	assert_true(buffed_asc.can_afford_cost(cost_ef), "2.10: Cost prediction accounts for active multiplier")
+	buffed_asc.apply_gameplay_effect(cost_ef)
+	assert_eq(buffed_asc.get_attribute("mana").base_value, 40.0, "2.11: Cost deducts from base")
+	assert_eq(buffed_asc.get_attribute("mana").current_value, 20.0, "2.12: Active multiplier applies to remaining base")
+	assert_false(buffed_asc.can_afford_cost(cost_ef), "2.13: Cost rejects insufficient remaining base")
+	var persistent_cost := GameplayEffect.new()
+	persistent_cost.policy = GameplayEffect.DurationPolicy.INFINITE
+	var persistent_cost_mod := GameplayEffectModifier.new()
+	persistent_cost_mod.attribute_name = "mana"
+	persistent_cost_mod.operation = GameplayEffectModifier.Operation.ADD
+	persistent_cost_mod.magnitude = -100.0
+	persistent_cost.modifiers.append(persistent_cost_mod)
+	assert_false(buffed_asc.can_afford_cost(persistent_cost), "2.14: Persistent cost predicts combined modifiers")
+	var override_mod := GameplayEffectModifier.new()
+	override_mod.attribute_name = "mana"
+	override_mod.operation = GameplayEffectModifier.Operation.OVERRIDE
+	override_mod.magnitude = 100.0
+	var override_effect := GameplayEffect.new()
+	override_effect.policy = GameplayEffect.DurationPolicy.INFINITE
+	override_effect.modifiers.append(override_mod)
+	buffed_asc.apply_gameplay_effect(override_effect)
+	assert_false(buffed_asc.can_afford_cost(cost_ef), "2.15: Override cannot conceal insufficient base resources")
+	buffed_asc.queue_free()
+
 
 # ---------------------------------------------------------
 # Battery 3: Instancing Policies
