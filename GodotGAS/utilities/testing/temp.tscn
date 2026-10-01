@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://ba4igfnl22ojy"]
-
-[ext_resource type="Script" uid="uid://bt8har1k64gj3" path="res://addons/GodotGAS/utilities/testing/modules/test_abilities.gd" id="1_fwn28"]
-
-[node name="Temp" type="Node" unique_id=1076067321]
-script = ExtResource("1_fwn28")

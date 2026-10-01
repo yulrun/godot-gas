@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d24wpax5epu2v"]
+
+[ext_resource type="Script" uid="uid://smojfag1ijn1" path="res://addons/GodotGAS/utilities/testing/test_runtime_debugger_visual.gd" id="1_en0pm"]
+
+[node name="TestRuntimeDebuggerVisual" type="Node2D" unique_id=437339486]
+script = ExtResource("1_en0pm")

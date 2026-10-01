@@ -70,6 +70,9 @@ signal ability_removed(ability: GameplayAbility)
 @export_category("Debugging")
 @export var debug_signal_log: bool = false
 
+## If true, automatically spawns a GASRuntimeDebugger overlay bound to this ASC.
+@export var show_visual_debugger: bool = false
+
 ## Array of integer IDs representing currently held inputs.
 var _active_inputs: Array[int] = []
 
@@ -139,6 +142,12 @@ func _ready() -> void:
 		gameplay_event_received.connect(_debug_gameplay_event_received)
 		active_effect_added.connect(_debug_active_effect_added)
 		active_effect_removed.connect(_debug_active_effect_removed)
+		
+	# Visual Runtime Debugger Integration
+	if show_visual_debugger:
+		var debugger := GASRuntimeDebugger.new()
+		debugger.name = "GASRuntimeDebugger"
+		add_child(debugger)
 
 
 func _process(delta: float) -> void:
