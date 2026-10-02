@@ -4,5 +4,3 @@
 
 [node name="MasterGasTester" type="Node" unique_id=1896759206]
 script = ExtResource("1_stjah")
-run_all_tests = false
-test_5_abilities = true

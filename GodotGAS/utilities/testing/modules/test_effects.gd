@@ -1,7 +1,7 @@
 ## Self-contained exhaustive test suite for the GodotGAS Effects Subsystem.
 ##
 ## Tests lifecycles, advanced stacking and overflows, SetByCaller injection,
-## Attribute-based scaling, tag suppression (inhibition), and cleansers.
+## Attribute-based scaling, tag suppression (inhibition), cleansers, and instigator isolation.
 ##
 ## @meta_addon: GodotGAS Version 1.1.0+
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -34,6 +34,7 @@ func run_all_tests() -> void:
 	await _battery_inhibition_and_cleansers()
 	await _battery_attribute_aggregation()
 	await _battery_capture_and_percent_add()
+	await _battery_8_instigator_isolation()
 	
 	print_summary()
 
@@ -116,8 +117,6 @@ func _battery_lifecycles_and_turns() -> void:
 	assert_false(asc._active_effects.has(turn_result), "1.15: Turn-based effect auto-expires after final turn")
 
 	asc.queue_free()
-
-
 
 
 # ---------------------------------------------------------
@@ -523,3 +522,61 @@ func _battery_capture_and_percent_add() -> void:
 	assert_approx(asc.get_attribute("armor").current_value, 10.0, 0.0001, "7.04: BASE_VALUE capture ignores active buffs and overrides using unbuffed base (100 * 0.1)")
 	
 	asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 8: Instigator Isolation & Stacking
+# ---------------------------------------------------------
+func _battery_8_instigator_isolation() -> void:
+	print_rich("\n[color=yellow]--- Battery 8: Instigator Isolation & Stacking ---[/color]")
+	
+	# Wrap ASCs in distinct Entity nodes so the Context captures different instigators
+	var defender_entity := Node.new()
+	var defender := AbilitySystemComponent.new()
+	defender.attribute_sets.append(EffectsAttributeSet.new())
+	defender_entity.add_child(defender)
+	add_child(defender_entity)
+	
+	var attacker_a_entity := Node.new()
+	var attacker_a := AbilitySystemComponent.new()
+	attacker_a_entity.add_child(attacker_a)
+	add_child(attacker_a_entity)
+	
+	var attacker_b_entity := Node.new()
+	var attacker_b := AbilitySystemComponent.new()
+	attacker_b_entity.add_child(attacker_b)
+	add_child(attacker_b_entity)
+	
+	var bleed_mod := GameplayEffectModifier.new()
+	bleed_mod.attribute_name = "health"
+	bleed_mod.operation = GameplayEffectModifier.Operation.ADD
+	bleed_mod.magnitude = -5.0
+	
+	var bleed_effect := GameplayEffect.new()
+	bleed_effect.policy = GameplayEffect.DurationPolicy.INFINITE
+	bleed_effect.stacking_policy = GameplayEffect.StackingPolicy.REFRESH_DURATION
+	bleed_effect.instigator_stacking_policy = GameplayEffect.InstigatorStackingPolicy.INDEPENDENT_BY_INSTIGATOR
+	bleed_effect.modifiers.append(bleed_mod)
+	
+	defender.apply_gameplay_effect(bleed_effect, attacker_a, 1.0)
+	defender.apply_gameplay_effect(bleed_effect, attacker_a, 1.0)
+	
+	assert_eq(defender._active_effects.size(), 1, "8.01: Attacker A stacks merge into a single active effect wrapper")
+	assert_eq(defender._active_effects[0].stack_count, 2, "8.02: Attacker A wrapper correctly increments to 2 stacks")
+	
+	defender.apply_gameplay_effect(bleed_effect, attacker_b, 1.0)
+	
+	assert_eq(defender._active_effects.size(), 2, "8.03: Attacker B application spawns a distinct, independent wrapper")
+	assert_eq(defender._active_effects[0].stack_count, 2, "8.04: Attacker A wrapper remains at 2 stacks")
+	assert_eq(defender._active_effects[1].stack_count, 1, "8.05: Attacker B wrapper initializes with 1 stack")
+	
+	# Note: We pass the Entity (Parent), not the component, because that is what Context targets!
+	defender.remove_effects_from_source(attacker_a_entity)
+	
+	assert_eq(defender._active_effects.size(), 1, "8.06: remove_effects_from_source safely purges only Attacker A's wrapper")
+	assert_eq(defender._active_effects[0].get_instigator(), attacker_b_entity, "8.07: Attacker B's wrapper survives the purge")
+	
+	defender_entity.queue_free()
+	attacker_a_entity.queue_free()
+	attacker_b_entity.queue_free()
+	

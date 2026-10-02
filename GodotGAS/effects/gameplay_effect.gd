@@ -23,6 +23,12 @@ enum StackingPolicy {
 	REFRESH_DURATION  # If applied again, resets the timer of the existing instance instead of adding a new one.
 }
 
+## Defines how stacks are handled when multiple instigators apply the same effect.
+enum InstigatorStackingPolicy { 
+	SHARED_POOL,              # All applications merge into a single effect wrapper.
+	INDEPENDENT_BY_INSTIGATOR # Applications from different instigators track independently.
+}
+
 @export_category("Effect Rules")
 ## How this effect behaves if it is applied while already active on the target.
 ## FREE = multiple unique stacks, REFRESH_DURATION will refresh existing
@@ -39,6 +45,8 @@ enum StackingPolicy {
 @export_range(0.0, 999.0, 0.1, "or_greater") var period: float = 0.0
 
 @export_category("Stacking & Overflows")
+## How this effect merges stacks from multiple different attackers.
+@export var instigator_stacking_policy: InstigatorStackingPolicy = InstigatorStackingPolicy.SHARED_POOL
 ## The maximum number of stacks this effect can accumulate. 0 means infinite.
 @export var max_stacks: int = 0
 ## Effects to apply to the target when the stack limit is reached and a new stack is attempted.

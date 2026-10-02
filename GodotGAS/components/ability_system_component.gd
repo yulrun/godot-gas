@@ -675,6 +675,13 @@ func _apply_effect_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 			for active_effect in _active_effects:
 				if active_effect.spec.effect_def == effect:
 					
+					# Check Instigator Isolation
+					if effect.instigator_stacking_policy == GameplayEffect.InstigatorStackingPolicy.INDEPENDENT_BY_INSTIGATOR:
+						var incoming_instigator = spec.context.instigator if spec.context else null
+						var existing_instigator = active_effect.get_instigator()
+						if incoming_instigator != existing_instigator:
+							continue # Skip this active wrapper; they belong to different instigators!
+					
 					if effect.max_stacks > 0 and active_effect.stack_count >= effect.max_stacks:
 						# OVERFLOW
 						var source_asc = self
