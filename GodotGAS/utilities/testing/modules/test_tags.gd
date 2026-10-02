@@ -3,7 +3,7 @@
 ## Tests reference counting, hierarchical inheritance, exact matching,
 ## signal dispatch, and full GameplayTagQuery rule variations.
 ##
-## @meta_addon: GodotGAS Version 1.1.0+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

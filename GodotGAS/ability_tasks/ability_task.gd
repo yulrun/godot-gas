@@ -3,7 +3,7 @@
 ## Defines the transient node lifecycle, automatically binding to a parent
 ## GameplayAbility and safely destroying itself if the ability is interrupted.
 ##
-## @meta_addon: GodotGAS Version 1+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

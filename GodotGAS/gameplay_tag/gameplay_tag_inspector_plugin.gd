@@ -3,7 +3,7 @@
 ## Intercepts exported properties configured with the custom hint "gas::tag" 
 ## and replaces their default inspector UI with the custom GameplayTagEditorProperty.
 ##
-## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

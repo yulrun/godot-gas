@@ -3,7 +3,7 @@
 ## Tests dynamic scene instantiation, the auto-destroy lifecycle, object pooling 
 ## efficiency, sleep/wake states, ASC integration, and persistent lifecycle parity.
 ##
-## @meta_addon: GodotGAS Version 1.1.0+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

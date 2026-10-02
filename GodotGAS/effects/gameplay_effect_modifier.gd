@@ -2,7 +2,7 @@
 ##
 ## Supports flat values, level-based curve scaling, SetByCaller injection, and Attribute-Based scaling.
 ##
-## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

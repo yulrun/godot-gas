@@ -1,6 +1,6 @@
 ## Standard Ability Task: Plays an animation and pauses execution until it finishes.
 ##
-## @meta_addon: GodotGAS Version 1+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

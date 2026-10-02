@@ -3,7 +3,7 @@
 ## Override the execute() function to perform complex combat math 
 ## (e.g., Damage = Caster.Attack - Target.Defense).
 ##
-## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

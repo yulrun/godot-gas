@@ -1,7 +1,7 @@
 ## A runtime payload that combines a static GameplayEffect definition
 ## with the specific context (instigator, targets, level) of its application.
 ##
-## @meta_addon: GodotGAS Version 1 (See plugin version for exact version)
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

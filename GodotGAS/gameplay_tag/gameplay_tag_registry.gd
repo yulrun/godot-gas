@@ -3,7 +3,7 @@
 ## Stored as a serialized Array of StringNames for optimized memory 
 ## and comparison. Auto-formats and validates tags upon entry.
 ##
-## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

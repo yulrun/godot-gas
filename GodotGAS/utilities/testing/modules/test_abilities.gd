@@ -4,7 +4,7 @@
 ## queries, instancing policies, interruption matrices, input routing, activation tags, 
 ## granular commits, and modular ability tasks.
 ##
-## @meta_addon: GodotGAS Version 1.1.0+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

@@ -3,7 +3,7 @@
 ## Replaces raw tag arrays with a single boolean evaluation matching 
 ## Unreal Engine's standard GameplayTagQuery architecture.
 ##
-## @meta_addon: GodotGAS Version 1 (See plugin version for exact version)
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

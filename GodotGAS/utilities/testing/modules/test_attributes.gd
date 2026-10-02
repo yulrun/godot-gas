@@ -3,7 +3,7 @@
 ## Tests AttributeData initialization, deep-cloning memory isolation,
 ## pre/post attribute pipelines, clamping goalposts, and dynamic overrides.
 ##
-## @meta_addon: GodotGAS Version 1.1.0+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

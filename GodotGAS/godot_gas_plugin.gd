@@ -3,7 +3,7 @@
 ## Handles the initialization of the GodotGAS editor dashboard, registers the 
 ## GameplayTag inspector plugin, and manages autoload singletons for the framework.
 ##
-## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

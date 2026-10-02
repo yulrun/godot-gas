@@ -4,7 +4,7 @@
 ## the AbilitySystemComponent and GASRuntimeDebugger child hierarchy, then executes
 ## timed visual test stages with 2.5-second pauses so each section update can be observed.
 ##
-## @meta_addon: GodotGAS Version 1.1.1+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

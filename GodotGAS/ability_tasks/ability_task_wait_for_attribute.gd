@@ -1,6 +1,6 @@
 ## Standard Ability Task: Pauses execution until a specific attribute changes on the ASC.
 ##
-## @meta_addon: GodotGAS Version 1+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 

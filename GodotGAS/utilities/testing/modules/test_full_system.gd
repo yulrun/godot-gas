@@ -4,7 +4,7 @@
 ## to verify that all subsystems (Tags, Attributes, Effects, Abilities, Cues) 
 ## interact flawlessly without degradation.
 ##
-## @meta_addon: GodotGAS Version 1.1.0+
+## @meta_addon: GodotGAS
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
