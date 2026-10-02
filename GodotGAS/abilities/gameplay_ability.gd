@@ -141,18 +141,41 @@ func try_activate(event_payload: Variant = null) -> bool:
 	return success
 
 
-## A standard helper to safely deduct resources and apply cooldowns at the EXACT same time.
-## Developers should call this manually inside _activate_ability() as soon as the ability is committed.
-func commit_ability() -> void:
+## Applies only the cost of the ability. Useful for granular decoupling of draining mechanics.
+func commit_cost() -> void:
 	if cost_effect:
 		owner_asc.apply_gameplay_effect(cost_effect, owner_asc, ability_level)
-	
+
+
+## Applies only the cooldowns of the ability.
+func commit_cooldown() -> void:
 	if cooldown_effect:
 		owner_asc.apply_gameplay_effect(cooldown_effect, owner_asc, ability_level)
 	
 	for shared_effect in shared_cooldown_effects:
 		if shared_effect:
 			owner_asc.apply_gameplay_effect(shared_effect, owner_asc, ability_level)
+
+
+## A standard helper to safely deduct resources and apply cooldowns at the EXACT same time.
+## Developers should call this manually inside _activate_ability() as soon as the ability is committed.
+func commit_ability() -> void:
+	commit_cost()
+	commit_cooldown()
+
+
+## Helper to quickly check if the ability can currently afford its cost.
+func check_cost() -> bool:
+	if owner_asc:
+		return owner_asc.check_ability_cost(self)
+	return false
+
+
+## Helper to quickly check if the ability is allowed to cast (not on cooldown).
+func check_cooldown() -> bool:
+	if owner_asc:
+		return owner_asc.check_ability_cooldown(self)
+	return false
 
 
 ## Virtual internal method. Override this in your specific ability scripts.

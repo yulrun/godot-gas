@@ -342,19 +342,33 @@ func can_activate_ability(ability: GameplayAbility, emit_failure: bool = false) 
 		return false
 	
 	# 3. Check Cooldowns (Personal + Shared)
-	if ability.has_method("get_cooldown_tags"):
+	if not check_ability_cooldown(ability, emit_failure):
+		return false
+	
+	# 4. Check Resource Costs, Fully supports ExecCalcs predicting math
+	if not check_ability_cost(ability, emit_failure):
+		return false
+		
+	return true
+
+
+## Evaluates only the cooldown requirement of a given ability against this ASC.
+func check_ability_cooldown(ability: GameplayAbility, emit_failure: bool = false) -> bool:
+	if ability and ability.has_method("get_cooldown_tags"):
 		var cooldown_tags = ability.get_cooldown_tags()
 		if has_any_tags(cooldown_tags):
 			if emit_failure: 
 				ability_activation_failed.emit(ability, ActivationError.ON_COOLDOWN, {"tags": cooldown_tags})
 			return false
-	
-	# 4. Check Resource Costs, Fully supports ExecCalcs predicting math
-	if ability.cost_effect and not can_afford_cost(ability.cost_effect, ability.ability_level):
+	return true
+
+
+## Evaluates only the resource cost requirement of a given ability against this ASC.
+func check_ability_cost(ability: GameplayAbility, emit_failure: bool = false) -> bool:
+	if ability and ability.cost_effect and not can_afford_cost(ability.cost_effect, ability.ability_level):
 		if emit_failure: 
 			ability_activation_failed.emit(ability, ActivationError.INSUFFICIENT_RESOURCES, {"effect": ability.cost_effect})
 		return false
-		
 	return true
 
 

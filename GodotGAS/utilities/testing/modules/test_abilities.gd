@@ -1,7 +1,7 @@
 ## Self-contained exhaustive test suite for the GodotGAS Abilities Subsystem.
 ##
 ## Tests granting/revoking, code-first instantiation, costs, cooldowns, 
-## queries, instancing policies, interruption matrices, input routing, and activation tags.
+## queries, instancing policies, interruption matrices, input routing, activation tags, and granular commits.
 ##
 ## @meta_addon: GodotGAS Version 1.1.0+
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -80,6 +80,7 @@ func run_all_tests() -> void:
 	await _battery_4_interruption_matrices()
 	await _battery_5_async_tasks_and_input()
 	await _battery_6_activation_owned_tags()
+	await _battery_7_granular_commits_and_checks()
 	
 	print_summary()
 
@@ -395,6 +396,53 @@ func _battery_6_activation_owned_tags() -> void:
 	
 	ability.end_ability()
 	assert_false(asc.has_tag(&"State.Attacking"), "6.02: ASC successfully lost activation_owned_tags upon ability end")
+	
+	asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 7: Granular Commits and Dynamic Checks
+# ---------------------------------------------------------
+func _battery_7_granular_commits_and_checks() -> void:
+	print_rich("\n[color=yellow]--- Battery 7: Granular Commits and Dynamic Checks ---[/color]")
+	
+	var asc := AbilitiesTestASC.new()
+	asc.name = "GranularASC"
+	asc.attribute_sets.append(AbilitiesAttributeSet.new())
+	add_child(asc)
+	
+	asc.get_attribute("mana").current_value = 100.0
+	
+	var ability := MockInstantAbility.new()
+	ability.ability_tag = &"Ability.Granular"
+	
+	var cost_mod := GameplayEffectModifier.new()
+	cost_mod.attribute_name = "mana"
+	cost_mod.operation = GameplayEffectModifier.Operation.ADD
+	cost_mod.magnitude = -20.0
+	var cost_ef := GameplayEffect.new()
+	cost_ef.policy = GameplayEffect.DurationPolicy.INSTANT
+	cost_ef.modifiers.append(cost_mod)
+	ability.cost_effect = cost_ef
+	
+	var cd_ef := GameplayEffect.new()
+	cd_ef.policy = GameplayEffect.DurationPolicy.DURATION
+	cd_ef.duration = 2.0
+	cd_ef.granted_tags.append(&"State.Cooldown.Granular")
+	ability.cooldown_effect = cd_ef
+	
+	asc.grant_ability(ability)
+	
+	# Test decoupled check and commit
+	assert_true(ability.check_cost(), "7.01: check_cost() evaluates independently to true")
+	ability.commit_cost()
+	assert_eq(asc.get_attribute("mana").current_value, 80.0, "7.02: commit_cost() applies only resource deduction without cooldown")
+	assert_false(asc.has_tag(&"State.Cooldown.Granular"), "7.03: Cooldown remains unapplied after commit_cost")
+	
+	assert_true(ability.check_cooldown(), "7.04: check_cooldown() evaluates independently to true")
+	ability.commit_cooldown()
+	assert_true(asc.has_tag(&"State.Cooldown.Granular"), "7.05: commit_cooldown() independently applies cooldown tags")
+	assert_false(ability.check_cooldown(), "7.06: check_cooldown() evaluates independently to false after commit")
 	
 	asc.queue_free()
 
