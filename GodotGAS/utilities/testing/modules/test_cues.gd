@@ -1,7 +1,7 @@
 ## Self-contained exhaustive test suite for the GodotGAS Cues Subsystem.
 ##
 ## Tests dynamic scene instantiation, the auto-destroy lifecycle, object pooling 
-## efficiency, sleep/wake states, and ASC integration.
+## efficiency, sleep/wake states, ASC integration, and persistent lifecycle parity.
 ##
 ## @meta_addon: GodotGAS Version 1.1.0+
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -33,6 +33,7 @@ func run_all_tests() -> void:
 	await _battery_object_pooling_recycling()
 	await _battery_manual_destruction()
 	await _battery_asc_integration()
+	await _battery_6_persistent_cues()
 	
 	# Restore global manager state
 	GameplayCueManager._cue_scenes = _original_scenes
@@ -216,3 +217,35 @@ func _battery_asc_integration() -> void:
 	assert_true(true, "5.03: Executing an unmapped/ghost tag fails gracefully without crashing")
 	
 	avatar.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 6: Persistent Cues & Lifecycle Parity
+# ---------------------------------------------------------
+func _battery_6_persistent_cues() -> void:
+	print_rich("\n[color=yellow]--- Battery 6: Persistent Cues & Lifecycle Parity ---[/color]")
+	
+	var target := Node.new()
+	add_child(target)
+	
+	var mock_scene := _create_mock_cue_scene(true, 0.1) # Originally a burst cue
+	GameplayCueManager._cue_scenes[&"Cue.Test.Aura"] = mock_scene
+	GameplayCueManager._pool[&"Cue.Test.Aura"] = []
+	
+	var active_cue = GameplayCueManager.add_persistent_cue(&"Cue.Test.Aura", target)
+	assert_true(active_cue != null, "6.01: add_persistent_cue successfully instantiates and returns the live node")
+	assert_false(active_cue.auto_destroy, "6.02: add_persistent_cue forcefully disables the auto_destroy timer")
+	
+	await get_tree().create_timer(0.15).timeout
+	assert_true(active_cue.is_inside_tree() and active_cue.get_parent() == target, "6.03: Persistent cue survives past its default burst lifespan")
+	
+	GameplayCueManager.set_cue_state(active_cue, false)
+	assert_eq(active_cue.process_mode, Node.PROCESS_MODE_DISABLED, "6.04: set_cue_state successfully suspends node processing")
+	assert_false(active_cue.get_node("VisualChild").visible, "6.05: set_cue_state successfully hides visual elements")
+	
+	GameplayCueManager.remove_persistent_cue(active_cue)
+	assert_eq(target.get_child_count(), 0, "6.06: remove_persistent_cue cleanly detaches the node from the target")
+	var pool: Array = GameplayCueManager._pool[&"Cue.Test.Aura"]
+	assert_eq(pool.size(), 1, "6.07: remove_persistent_cue returns the node to the global object pool")
+	
+	target.queue_free()

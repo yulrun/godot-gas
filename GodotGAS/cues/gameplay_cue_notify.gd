@@ -37,6 +37,12 @@ func execute_cue(target: Node, payload: Dictionary = {}) -> void:
 		get_tree().create_timer(destroy_delay).timeout.connect(finish_cue)
 
 
+## For persistent cues, called by the Manager when the effect is removed.
+## Override this in inherited scripts to play fade-out animations, then call finish_cue() when done.
+func end_cue() -> void:
+	finish_cue()
+
+
 ## Call this from your inherited scripts when the visual/audio effect is 100% done.
 ## (e.g., hook this up to the 'finished' signal of an AudioStreamPlayer or a Timer).
 func finish_cue() -> void:

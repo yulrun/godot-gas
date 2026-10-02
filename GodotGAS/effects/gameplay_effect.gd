@@ -67,6 +67,8 @@ enum InstigatorStackingPolicy {
 @export_category("Cue Management")
 ## Cues that play exactly once when the effect is first applied to a target.
 @export_custom(PROPERTY_HINT_NONE, "gas::tag") var application_cue_tags: Array[StringName] = []
+## Cues that persistently loop while the effect is active, pausing during suppression.
+@export_custom(PROPERTY_HINT_NONE, "gas::tag") var persistent_cue_tags: Array[StringName] = []
 ## Cues that play every time a periodic tick occurs.
 @export_custom(PROPERTY_HINT_NONE, "gas::tag") var periodic_cue_tags: Array[StringName] = []
 ## Cues that play exactly once when the effect expires or is forcefully removed.

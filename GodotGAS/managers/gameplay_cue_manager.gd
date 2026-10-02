@@ -47,14 +47,12 @@ func _load_registry() -> void:
 
 
 #region Cue Execution
-## The main public API called by the ASC to spawn an effect.
+## The main public API called by the ASC to spawn a one-off burst effect.
 func execute_cue(tag: StringName, target: Node, payload: Dictionary = {}) -> void:
 	if not _cue_scenes.has(tag):
 		return
 		
 	var cue_instance: GameplayCueNotify = _get_or_create_cue(tag)
-	
-	# Ensures the cue_instance was correctly loaded and bypasses nullpoint errors
 	if not cue_instance:
 		return
 	
@@ -62,8 +60,35 @@ func execute_cue(tag: StringName, target: Node, payload: Dictionary = {}) -> voi
 		cue_instance.get_parent().remove_child(cue_instance)
 		
 	target.add_child(cue_instance)
-	
 	cue_instance.execute_cue(target, payload)
+
+
+## Adds a persistent cue that will not automatically destroy itself.
+## Returns the live node so the ASC can track and suppress it later.
+func add_persistent_cue(tag: StringName, target: Node, payload: Dictionary = {}) -> GameplayCueNotify:
+	if not _cue_scenes.has(tag):
+		return null
+		
+	var cue_instance: GameplayCueNotify = _get_or_create_cue(tag)
+	if not cue_instance:
+		return null
+	
+	# Override auto-destroy for persistent lifecycle mapping
+	cue_instance.auto_destroy = false
+	
+	if cue_instance.get_parent():
+		cue_instance.get_parent().remove_child(cue_instance)
+		
+	target.add_child(cue_instance)
+	cue_instance.execute_cue(target, payload)
+	
+	return cue_instance
+
+
+## Manually concludes a persistent cue and triggers its fade-out phase.
+func remove_persistent_cue(cue_node: GameplayCueNotify) -> void:
+	if is_instance_valid(cue_node):
+		cue_node.end_cue()
 #endregion
 
 
@@ -73,7 +98,7 @@ func _get_or_create_cue(tag: StringName) -> GameplayCueNotify:
 	# 1. Try to grab an existing dormant cue from the pool
 	if _pool.has(tag) and _pool[tag].size() > 0:
 		var pooled_cue = _pool[tag].pop_back()
-		_set_cue_state(pooled_cue, true) # FIX: WAKE THE CUE UP!
+		set_cue_state(pooled_cue, true) # WAKE THE CUE UP!
 		return pooled_cue
 		
 	# 2. If the pool is empty, instance a brand new one
@@ -89,7 +114,7 @@ func _get_or_create_cue(tag: StringName) -> GameplayCueNotify:
 	new_cue.gameplay_cue_tag = tag
 	new_cue.cue_finished.connect(_on_cue_finished)
 	
-	_set_cue_state(new_cue, true) # Initialize as Active
+	set_cue_state(new_cue, true) # Initialize as Active
 	return new_cue
 
 
@@ -98,7 +123,7 @@ func _on_cue_finished(cue_node: GameplayCueNotify, tag: StringName) -> void:
 	if cue_node.get_parent():
 		cue_node.get_parent().remove_child(cue_node)
 	
-	_set_cue_state(cue_node, false) # Put to sleep
+	set_cue_state(cue_node, false) # Put to sleep
 	add_child(cue_node)
 	
 	if not _pool.has(tag):
@@ -109,7 +134,7 @@ func _on_cue_finished(cue_node: GameplayCueNotify, tag: StringName) -> void:
 
 ## Centralized lifecycle state manager.
 ## Handles enabling/disabling logic and visual toggling for any node structure.
-func _set_cue_state(cue: GameplayCueNotify, active: bool) -> void:
+func set_cue_state(cue: GameplayCueNotify, active: bool) -> void:
 	# 1. Toggle Logic
 	cue.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 	

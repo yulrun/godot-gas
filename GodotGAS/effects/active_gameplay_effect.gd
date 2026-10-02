@@ -33,6 +33,9 @@ var is_suppressed: bool = false
 ## The current number of stacks this effect has accumulated.
 var stack_count: int = 1
 
+## Holds references to any looping visual/audio cues tied to this effect's lifecycle.
+var active_cues: Array[GameplayCueNotify] = []
+
 
 #region Initialization
 func _init(in_spec: GameplayEffectSpec) -> void:

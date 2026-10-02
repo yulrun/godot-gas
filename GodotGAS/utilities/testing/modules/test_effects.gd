@@ -1,7 +1,8 @@
 ## Self-contained exhaustive test suite for the GodotGAS Effects Subsystem.
 ##
 ## Tests lifecycles, advanced stacking and overflows, SetByCaller injection,
-## Attribute-based scaling, tag suppression (inhibition), cleansers, and instigator isolation.
+## Attribute-based scaling, tag suppression (inhibition), cleansers, 
+## instigator isolation, and persistent auras.
 ##
 ## @meta_addon: GodotGAS Version 1.1.0+
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -35,6 +36,7 @@ func run_all_tests() -> void:
 	await _battery_attribute_aggregation()
 	await _battery_capture_and_percent_add()
 	await _battery_8_instigator_isolation()
+	await _battery_9_persistent_cues_and_auras()
 	
 	print_summary()
 
@@ -579,4 +581,66 @@ func _battery_8_instigator_isolation() -> void:
 	defender_entity.queue_free()
 	attacker_a_entity.queue_free()
 	attacker_b_entity.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 9: Persistent Cues and Looping Auras
+# ---------------------------------------------------------
+func _battery_9_persistent_cues_and_auras() -> void:
+	print_rich("\n[color=yellow]--- Battery 9: Persistent Cues and Looping Auras ---[/color]")
 	
+	# We must mock a cue scene in the manager for this test
+	var root_cue := GameplayCueNotify.new()
+	root_cue.name = "MockAura"
+	var visual := Node2D.new()
+	visual.name = "VisualChild"
+	root_cue.add_child(visual)
+	visual.owner = root_cue
+	var pack := PackedScene.new()
+	pack.pack(root_cue)
+	root_cue.queue_free()
+	
+	GameplayCueManager._cue_scenes[&"Cue.Aura.Fire"] = pack
+	GameplayCueManager._pool[&"Cue.Aura.Fire"] = []
+	
+	var entity := Node.new()
+	var asc := AbilitySystemComponent.new()
+	asc.name = "AuraASC"
+	asc.attribute_sets.append(EffectsAttributeSet.new())
+	entity.add_child(asc)
+	add_child(entity)
+	
+	var supp_query := GameplayTagQuery.new()
+	supp_query.require_exact_tags.append(&"State.Silenced")
+	
+	var aura_ef := GameplayEffect.new()
+	aura_ef.policy = GameplayEffect.DurationPolicy.INFINITE
+	aura_ef.persistent_cue_tags.append(&"Cue.Aura.Fire")
+	aura_ef.ongoing_suppression_query = supp_query
+	
+	var active_eff = asc.apply_gameplay_effect(aura_ef, asc, 1.0)
+	
+	assert_eq(active_eff.active_cues.size(), 1, "9.01: ActiveGameplayEffect correctly tracks spawned persistent cues")
+	var live_cue = active_eff.active_cues[0]
+	assert_true(live_cue.is_inside_tree() and live_cue.get_parent() == entity, "9.02: Persistent cue successfully parented to the Entity")
+	
+	# Suppress it
+	asc.add_tag(&"State.Silenced")
+	assert_eq(live_cue.process_mode, Node.PROCESS_MODE_DISABLED, "9.03: Ongoing Suppression securely paused the persistent cue")
+	assert_false(live_cue.get_node("VisualChild").visible, "9.04: Ongoing Suppression visually hid the persistent cue")
+	
+	# Unsuppress it
+	asc.remove_tag(&"State.Silenced")
+	assert_eq(live_cue.process_mode, Node.PROCESS_MODE_INHERIT, "9.05: Removing Suppression woke the persistent cue back up")
+	assert_true(live_cue.get_node("VisualChild").visible, "9.06: Removing Suppression visually restored the persistent cue")
+	
+	# Expire it
+	asc.remove_active_effect(active_eff)
+	assert_false(live_cue.get_parent() == entity, "9.07: Removing the active effect safely detached the persistent cue from the target")
+	assert_true(live_cue.get_parent() == GameplayCueManager, "9.08: Persistent cue was correctly recycled into the global object pool")
+	
+	entity.queue_free()
+	
+	# Cleanup global test state
+	GameplayCueManager._cue_scenes.erase(&"Cue.Aura.Fire")
+	GameplayCueManager._pool.erase(&"Cue.Aura.Fire")

@@ -793,6 +793,14 @@ func _execute_active_spec(spec: GameplayEffectSpec) -> ActiveGameplayEffect:
 	if not active_effect.is_suppressed:
 		for tag in effect.granted_tags:
 			add_tag(tag)
+			
+	# Persistent cues are spawned regardless of suppression so they are tracked, but we pause them if suppressed
+	for cue_tag in effect.persistent_cue_tags:
+		var spawned_cue = GameplayCueManager.add_persistent_cue(cue_tag, get_parent(), {"target": get_parent()})
+		if spawned_cue:
+			if active_effect.is_suppressed:
+				GameplayCueManager.set_cue_state(spawned_cue, false)
+			active_effect.active_cues.append(spawned_cue)
 
 	_active_effects.append(active_effect)
 	# Persistent math is derived from the active set. Periodic math is committed
@@ -822,6 +830,11 @@ func remove_active_effect(active_effect: ActiveGameplayEffect, _skip_array_erase
 	if not active_effect.is_suppressed:
 		for tag in active_effect.get_effect_def().granted_tags:
 			remove_tag(tag)
+			
+	# Cleanup persistent cues
+	for cue in active_effect.active_cues:
+		GameplayCueManager.remove_persistent_cue(cue)
+	active_effect.active_cues.clear()
 
 	# Trigger Removal Cues
 	for cue_tag in active_effect.get_effect_def().removal_cue_tags:
@@ -888,6 +901,9 @@ func _suppress_effect(active_effect: ActiveGameplayEffect) -> void:
 		
 	for tag in active_effect.get_effect_def().granted_tags:
 		remove_tag(tag)
+		
+	for cue in active_effect.active_cues:
+		GameplayCueManager.set_cue_state(cue, false)
 
 
 ## Restores a previously suppressed active effect's modifiers and granted tags.
@@ -897,6 +913,9 @@ func _unsuppress_effect(active_effect: ActiveGameplayEffect) -> void:
 		
 	for tag in active_effect.get_effect_def().granted_tags:
 		add_tag(tag)
+		
+	for cue in active_effect.active_cues:
+		GameplayCueManager.set_cue_state(cue, true)
 #endregion
 
 
