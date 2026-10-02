@@ -182,7 +182,7 @@ func check_cooldown() -> bool:
 func _activate_ability() -> bool:
 	# Example flow:
 	# commit_ability()
-	# await play_animation()
+	# await task_play_animation_and_wait(anim_player, "Attack")
 	# apply_effect_to_targets(...)
 	return true 
 
@@ -306,56 +306,40 @@ func _active_input_released(asc: AbilitySystemComponent) -> void:
 
 
 #region Async Ability Tasks
+## Binds a custom AbilityTask node to this ability's lifecycle.
+func bind_task(task: AbilityTask) -> void:
+	task.bind_to_ability(self)
+
+
 ## Pauses ability execution for a specific duration in seconds without blocking the thread.
 func task_wait_delay(duration: float) -> void:
-	if duration <= 0.0: return
-	
-	# Yield for a single frame before starting the clock. 
-	# This protects the SceneTreeTimer from instantly absorbing massive delta spikes 
-	# that occur when abilities are cast during _ready() or heavy scene loads.
-	await get_tree().process_frame
-	await get_tree().create_timer(duration).timeout
+	var task := AbilityTask_WaitDelay.new()
+	bind_task(task)
+	task.execute(duration)
+	await task.task_finished
 
 
 ## Yields execution until the ASC receives a specific gameplay event tag.
-## Uses a loop to continuously filter incoming signals until the correct tag is intercepted.
 func task_wait_for_event(target_tag: StringName) -> Variant:
-	if not owner_asc: return {}
-	
-	while is_active:
-		# Awaiting a signal with multiple parameters returns an Array in Godot 4
-		var args = await owner_asc.gameplay_event_received
-		var received_tag = args[0] if args is Array else args
-		var payload = args[1] if args is Array and args.size() > 1 else {}
-		
-		if received_tag == target_tag:
-			return payload
-			
-	return {}
+	var task := AbilityTask_WaitForEvent.new()
+	bind_task(task)
+	task.execute(target_tag)
+	var payload = await task.task_finished
+	return payload if payload != null else {}
 
 
 ## Yields execution until a specific attribute changes on the owner's ASC.
 func task_wait_for_attribute_change(attribute_name: String) -> void:
-	if not owner_asc: return
-	
-	while is_active:
-		var args = await owner_asc.attribute_changed
-		var changed_attr = args[0] if args is Array else args
-		
-		if changed_attr == attribute_name:
-			return
+	var task := AbilityTask_WaitForAttribute.new()
+	bind_task(task)
+	task.execute(attribute_name)
+	await task.task_finished
 
 
 ## Plays a specific animation and yields execution until that exact animation finishes.
 func task_play_animation_and_wait(anim_player: AnimationPlayer, anim_name: String) -> void:
-	if not anim_player or not anim_player.has_animation(anim_name):
-		push_warning("GodotGAS: Animation '%s' not found on %s." % [anim_name, anim_player.name])
-		return
-		
-	anim_player.play(anim_name)
-	
-	while is_active:
-		var finished_anim_name = await anim_player.animation_finished
-		if finished_anim_name == anim_name:
-			return
+	var task := AbilityTask_PlayAnimation.new()
+	bind_task(task)
+	task.execute(anim_player, anim_name)
+	await task.task_finished
 #endregion

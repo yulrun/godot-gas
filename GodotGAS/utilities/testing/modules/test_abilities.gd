@@ -1,7 +1,8 @@
 ## Self-contained exhaustive test suite for the GodotGAS Abilities Subsystem.
 ##
 ## Tests granting/revoking, code-first instantiation, costs, cooldowns, 
-## queries, instancing policies, interruption matrices, input routing, activation tags, and granular commits.
+## queries, instancing policies, interruption matrices, input routing, activation tags, 
+## granular commits, and modular ability tasks.
 ##
 ## @meta_addon: GodotGAS Version 1.1.0+
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -81,6 +82,7 @@ func run_all_tests() -> void:
 	await _battery_5_async_tasks_and_input()
 	await _battery_6_activation_owned_tags()
 	await _battery_7_granular_commits_and_checks()
+	await _battery_8_modular_ability_tasks()
 	
 	print_summary()
 
@@ -328,15 +330,15 @@ func _battery_5_async_tasks_and_input() -> void:
 	
 	_async_tracker.clear()
 	
-	# Async Task Execution
+	# Async Task Execution (Testing the wrapper logic)
 	var async_ab := MockAsyncAbility.new()
 	async_ab.ability_tag = &"Ability.WaitEvent"
 	asc.grant_ability(async_ab)
 	
 	_fire_async_task(async_ab, "async")
-	await get_tree().process_frame # Yield so ability can wait for event
+	await get_tree().process_frame # Yield so ability can spawn task node and wait
 	
-	assert_false(_async_tracker.has("async"), "5.01: task_wait_for_event correctly yields ability thread without blocking")
+	assert_false(_async_tracker.has("async"), "5.01: task_wait_for_event wrapper correctly yields ability thread without blocking")
 	
 	# Send incorrect event
 	asc.send_gameplay_event(&"Event.Ghost", {"data": 0})
@@ -443,6 +445,45 @@ func _battery_7_granular_commits_and_checks() -> void:
 	ability.commit_cooldown()
 	assert_true(asc.has_tag(&"State.Cooldown.Granular"), "7.05: commit_cooldown() independently applies cooldown tags")
 	assert_false(ability.check_cooldown(), "7.06: check_cooldown() evaluates independently to false after commit")
+	
+	asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 8: Modular Ability Tasks & Cancellation
+# ---------------------------------------------------------
+func _battery_8_modular_ability_tasks() -> void:
+	print_rich("\n[color=yellow]--- Battery 8: Modular Ability Tasks & Cancellation ---[/color]")
+	
+	var asc := AbilitiesTestASC.new()
+	asc.name = "TaskASC"
+	add_child(asc)
+	
+	var channel_ab := MockChanneledAbility.new() # uses task_wait_delay(0.5)
+	channel_ab.ability_tag = &"Ability.Channeled"
+	asc.grant_ability(channel_ab)
+	
+	_fire_async_task(channel_ab, "task_test")
+	
+	# Wait 2 frames so the task is cleanly instantiated and added to the tree
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Find the task node
+	var found_task: Node = null
+	for child in channel_ab.get_children():
+		if child is AbilityTask:
+			found_task = child
+			break
+			
+	assert_true(found_task != null, "8.01: Legacy task_wait_delay automatically spawns an AbilityTask child node")
+	
+	# Abort the ability while the task is still actively yielding
+	channel_ab.abort_ability()
+	
+	await get_tree().process_frame
+	
+	assert_false(is_instance_valid(found_task) and not found_task.is_queued_for_deletion(), "8.02: AbilityTask node instantly queued for deletion upon parent ability abort")
 	
 	asc.queue_free()
 
