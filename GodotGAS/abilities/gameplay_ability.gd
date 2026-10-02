@@ -40,6 +40,8 @@ signal ability_ended(was_cancelled: bool)
 @export_custom(PROPERTY_HINT_NONE, "gas::tag") var block_abilities_with_tags: Array[StringName] = []
 
 @export_category("Ability Mechanics")
+## Tags automatically granted to the ASC while this ability is executing.
+@export_custom(PROPERTY_HINT_NONE, "gas::tag") var activation_owned_tags: Array[StringName] = []
 ## The gameplay effect applied to the owner to deduct resources upon committing.
 @export var cost_effect: GameplayEffect
 ## The gameplay effect applied to the owner to trigger a cooldown upon committing.
@@ -123,6 +125,10 @@ func try_activate(event_payload: Variant = null) -> bool:
 	# DECLARATIVE INTERRUPTION: Cancel overlapping abilities right as we commit to activating
 	if cancel_abilities_with_tags.size() > 0:
 		owner_asc.cancel_abilities_with_tags(cancel_abilities_with_tags)
+		
+	# DECLARATIVE STATE: Grant activation tags while executing
+	for tag in activation_owned_tags:
+		owner_asc.add_tag(tag)
 	
 	# Logic execution
 	var success = await _activate_ability()
@@ -167,7 +173,16 @@ func abort_ability() -> void:
 
 ## Cleans up the state of the ability.
 func end_ability(was_cancelled: bool = false) -> void:
+	if not is_active:
+		return
+		
 	is_active = false
+	
+	# Strip granted state tags safely
+	if owner_asc:
+		for tag in activation_owned_tags:
+			owner_asc.remove_tag(tag)
+			
 	# We intentionally DO NOT remove the ability from the ASC here, 
 	# otherwise it gets permanently un-granted.
 	

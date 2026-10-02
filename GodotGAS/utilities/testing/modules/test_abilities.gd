@@ -1,7 +1,7 @@
 ## Self-contained exhaustive test suite for the GodotGAS Abilities Subsystem.
 ##
 ## Tests granting/revoking, code-first instantiation, costs, cooldowns, 
-## queries, instancing policies, interruption matrices, and input routing.
+## queries, instancing policies, interruption matrices, input routing, and activation tags.
 ##
 ## @meta_addon: GodotGAS Version 1.1.0+
 ## @meta_author: YulRun (https://YulRun.Dev)
@@ -79,6 +79,7 @@ func run_all_tests() -> void:
 	await _battery_3_instancing_policies()
 	await _battery_4_interruption_matrices()
 	await _battery_5_async_tasks_and_input()
+	await _battery_6_activation_owned_tags()
 	
 	print_summary()
 
@@ -369,6 +370,32 @@ func _battery_5_async_tasks_and_input() -> void:
 	assert_eq(input_ab_1.activation_count, 2, "5.07: try_activate_abilities_by_tag triggered first instance")
 	assert_eq(input_ab_2.activation_count, 1, "5.08: try_activate_abilities_by_tag triggered second instance concurrently")
 
+	asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 6: Activation-Owned Tags
+# ---------------------------------------------------------
+func _battery_6_activation_owned_tags() -> void:
+	print_rich("\n[color=yellow]--- Battery 6: Activation-Owned Tags ---[/color]")
+	
+	var asc := AbilitiesTestASC.new()
+	asc.name = "OwnedTagsASC"
+	add_child(asc)
+	
+	var ability := MockChanneledAbility.new()
+	ability.ability_tag = &"Ability.Action.OwnedTags"
+	ability.activation_owned_tags.append(&"State.Attacking")
+	asc.grant_ability(ability)
+	
+	_fire_async_task(ability, "owned_tags")
+	await get_tree().process_frame # Let channel begin
+	
+	assert_true(asc.has_tag(&"State.Attacking"), "6.01: ASC successfully gained activation_owned_tags upon ability start")
+	
+	ability.end_ability()
+	assert_false(asc.has_tag(&"State.Attacking"), "6.02: ASC successfully lost activation_owned_tags upon ability end")
+	
 	asc.queue_free()
 
 
