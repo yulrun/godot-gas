@@ -400,39 +400,48 @@ func _update_attributes() -> void:
 				var attr: AttributeData = set.get(prop.name)
 				if attr:
 					var attr_name: String = prop.name
+					
+					# 1. Track the "Spawn" value
 					if not _original_base_values.has(attr_name):
 						_original_base_values[attr_name] = attr.base_value
-						
 					var orig_base: float = _original_base_values[attr_name]
 					
-					# Highlight current value relative to base value
+					# 2. Determine if the attribute is actively OVERRIDDEN
+					var is_overridden: bool = false
+					for active_effect in target_asc._active_effects:
+						if active_effect.is_suppressed:
+							continue
+						var def := active_effect.get_effect_def()
+						if not def:
+							continue
+						for mod in def.modifiers:
+							if mod and mod.attribute_name == attr_name and mod.operation == GameplayEffectModifier.Operation.OVERRIDE:
+								is_overridden = true
+								break
+						if is_overridden:
+							break
+					
+					# 3. Determine colors
 					var cur_color: String = "cyan"
-					if attr.current_value > attr.base_value:
+					if is_overridden:
+						cur_color = "orange"
+					elif attr.current_value > attr.base_value:
 						cur_color = "green"
 					elif attr.current_value < attr.base_value:
 						cur_color = "red"
 						
-					# Determine if the base value was overridden via direct mutation or active effect
-					var is_overridden: bool = not is_equal_approx(attr.base_value, orig_base)
-					if not is_overridden:
-						for active_effect in target_asc._active_effects:
-							if active_effect.is_suppressed:
-								continue
-							var def := active_effect.get_effect_def()
-							if not def:
-								continue
-							for mod in def.modifiers:
-								if mod and mod.attribute_name == attr_name and mod.operation == GameplayEffectModifier.Operation.OVERRIDE:
-									is_overridden = true
-									break
-							if is_overridden:
-								break
+					# 4. Format context text based on state
+					var has_drifted: bool = not is_equal_approx(attr.base_value, orig_base)
+					var is_buffed: bool = not is_equal_approx(attr.current_value, attr.base_value)
 					
 					var base_text: String = ""
-					if is_overridden:
-						base_text = "[color=gray](Base: [/color][color=orange]%.1f[/color] [color=gray][Orig: %.1f])[/color]" % [attr.base_value, orig_base]
-					else:
-						base_text = "[color=gray](Base: %.1f)[/color]" % attr.base_value
+					if is_overridden or is_buffed:
+						if has_drifted:
+							base_text = "[color=gray](Base: %.1f [Orig: %.1f])[/color]" % [attr.base_value, orig_base]
+						else:
+							base_text = "[color=gray](Base: %.1f)[/color]" % attr.base_value
+					elif has_drifted:
+						base_text = "[color=gray](Orig: %.1f)[/color]" % orig_base
 						
 					bbcode += "- %s: [color=%s]%.1f[/color] %s\n" % [attr_name.capitalize(), cur_color, attr.current_value, base_text]
 					

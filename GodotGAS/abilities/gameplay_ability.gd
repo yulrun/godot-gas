@@ -3,7 +3,7 @@
 ## Defines the core execution logic, input routing, and effect application 
 ## pipelines for an ability. Intended to be extended by specific ability scripts.
 ##
-## @meta_addon: GodotGAS
+## @meta_addon: GodotGAS Version 1+ (See plugin version for exact version)
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
@@ -342,4 +342,14 @@ func task_play_animation_and_wait(anim_player: AnimationPlayer, anim_name: Strin
 	bind_task(task)
 	task.execute(anim_player, anim_name)
 	await task.task_finished
+
+
+## Spawns a custom targeting reticle and yields execution until the player confirms their aim.
+## Returns the resulting hit data, or null if the target was cancelled.
+func task_wait_for_target_data(target_actor_scene: PackedScene) -> GameplayAbilityTargetData:
+	var task := AbilityTask_WaitForTargetData.new()
+	bind_task(task)
+	task.execute(target_actor_scene)
+	var payload = await task.task_finished
+	return payload as GameplayAbilityTargetData
 #endregion

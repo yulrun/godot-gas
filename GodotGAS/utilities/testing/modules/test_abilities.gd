@@ -2,9 +2,9 @@
 ##
 ## Tests granting/revoking, code-first instantiation, costs, cooldowns, 
 ## queries, instancing policies, interruption matrices, input routing, activation tags, 
-## granular commits, and modular ability tasks.
+## granular commits, modular ability tasks, and visual target actors.
 ##
-## @meta_addon: GodotGAS
+## @meta_addon: GodotGAS Version 1.1.0+
 ## @meta_author: YulRun (https://YulRun.Dev)
 ## @meta_license: MIT
 
@@ -56,6 +56,22 @@ class CodeFirstAbility extends GameplayAbility:
 		execution_count += 1
 		return true
 
+class MockTargetActor extends GameplayAbilityTargetActor:
+	var _timer: SceneTreeTimer
+	func start_targeting() -> void:
+		_timer = get_tree().create_timer(0.1)
+		_timer.timeout.connect(_on_timeout)
+	func _on_timeout() -> void:
+		var data = GameplayAbilityTargetData.new()
+		confirm_target(data)
+
+class MockTargetingAbility extends GameplayAbility:
+	var hit_data: GameplayAbilityTargetData = null
+	var targeting_scene: PackedScene = null
+	func _activate_ability() -> bool:
+		hit_data = await task_wait_for_target_data(targeting_scene)
+		return hit_data != null
+
 
 # ---------------------------------------------------------
 # Global Test Tracking
@@ -83,6 +99,7 @@ func run_all_tests() -> void:
 	await _battery_6_activation_owned_tags()
 	await _battery_7_granular_commits_and_checks()
 	await _battery_8_modular_ability_tasks()
+	await _battery_9_targeting_actors()
 	
 	print_summary()
 
@@ -486,6 +503,69 @@ func _battery_8_modular_ability_tasks() -> void:
 	assert_false(is_instance_valid(found_task) and not found_task.is_queued_for_deletion(), "8.02: AbilityTask node instantly queued for deletion upon parent ability abort")
 	
 	asc.queue_free()
+
+
+# ---------------------------------------------------------
+# Battery 9: Targeting Actors & Visual Reticles
+# ---------------------------------------------------------
+func _battery_9_targeting_actors() -> void:
+	print_rich("\n[color=yellow]--- Battery 9: Targeting Actors & Visual Reticles ---[/color]")
+	
+	var avatar := Node.new()
+	add_child(avatar)
+	
+	var asc := AbilitiesTestASC.new()
+	asc.name = "TargetASC"
+	avatar.add_child(asc)
+	
+	var pack := PackedScene.new()
+	var mock_actor := MockTargetActor.new()
+	mock_actor.name = "MockTargetActor"
+	pack.pack(mock_actor)
+	mock_actor.queue_free()
+	
+	var targeting_ab := MockTargetingAbility.new()
+	targeting_ab.ability_tag = &"Ability.Targeting"
+	targeting_ab.targeting_scene = pack
+	asc.grant_ability(targeting_ab)
+	
+	_fire_async_task(targeting_ab, "targeting_test")
+	
+	# Yield long enough for the AbilityTask to dynamically spawn the actor
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	var spawned_actor = avatar.get_node_or_null("MockTargetActor")
+	assert_true(spawned_actor != null, "9.01: Targeting task dynamically instantiated the visual reticle scene and attached it to the Avatar")
+	
+	# Wait for the MockTargetActor's 0.1s timer to expire and confirm its own hit
+	await get_tree().create_timer(0.15).timeout
+	
+	assert_true(targeting_ab.hit_data != null, "9.02: Ability correctly received the target data payload upon reticle confirmation")
+	assert_false(is_instance_valid(spawned_actor) and not spawned_actor.is_queued_for_deletion(), "9.03: Target task safely cleaned up the visual reticle from the world upon completion")
+	
+	# Test Interruption & GC Cleanup
+	var cancel_ab := MockTargetingAbility.new()
+	cancel_ab.ability_tag = &"Ability.Targeting.Cancel"
+	cancel_ab.targeting_scene = pack
+	asc.grant_ability(cancel_ab)
+	
+	_fire_async_task(cancel_ab, "targeting_cancel_test")
+	
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	var abort_actor = avatar.get_node_or_null("MockTargetActor")
+	assert_true(abort_actor != null, "9.04: Second reticle successfully spawned")
+	
+	# Forcefully stun/cancel the player while they are aiming the reticle
+	cancel_ab.abort_ability()
+	
+	await get_tree().process_frame
+	
+	assert_false(is_instance_valid(abort_actor) and not abort_actor.is_queued_for_deletion(), "9.05: Interrupted ability safely memory-managed the target actor and prevented orphans")
+	
+	avatar.queue_free()
 
 
 # ---------------------------------------------------------
