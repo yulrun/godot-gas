@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="GameplayTagRegistry" format=3 uid="uid://calueivbosmc7"]
+
+[ext_resource type="Script" uid="uid://cbna3i315ffo1" path="res://addons/GodotGAS/gameplay_tag/gameplay_tag_registry.gd" id="1_bliae"]
+
+[resource]
+script = ExtResource("1_bliae")
+tags = Array[StringName]([&"Ability.Basic.Damage", &"Ability.Basic.Heal", &"Ability.Channeled.Beam", &"Ability.Combat.Explosion", &"Ability.Combat.Shoot", &"Cooldown.Beam", &"Cooldown.Damage", &"Cooldown.Heal", &"Cooldown.Shoot", &"Cue.Aura.Shield", &"Cue.Impact.Explosion", &"Cue.Impact.Hit", &"Event.Combat.Hit", &"State.Movement.Sprint", &"State.Turnbased.Active", &"Status.Buff.Shielded", &"Status.Debuff.Burning", &"Status.Debuff.Chilled", &"Status.Debuff.Frozen", &"Status.Debuff.Silenced", &"Status.Debuff.Stunned"])

@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://bp0eqptfl1u23"]
+
+[ext_resource type="Script" uid="uid://cmqvpxjsi3jb7" path="res://core_concepts/2_stacking/scene_2_stacking.gd" id="1_c3w78"]
+
+[node name="Scene2Stacking" type="Control" unique_id=1284755301]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_c3w78")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1859059949]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 407.0
+grow_vertical = 2
+
+[node name="Stats" type="HBoxContainer" parent="VBoxContainer" unique_id=114008981]
+layout_mode = 2
+
+[node name="LblSpeed" type="Label" parent="VBoxContainer/Stats" unique_id=84708949]
+layout_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="VBoxContainer" unique_id=473616924]
+layout_mode = 2
+
+[node name="BtnChill" type="Button" parent="VBoxContainer/Actions" unique_id=256549729]
+layout_mode = 2
+text = "Apply Chill Stack (-50 Speed, Max 3)"
+
+[node name="BtnThaw" type="Button" parent="VBoxContainer/Actions" unique_id=612369602]
+layout_mode = 2
+text = "Cleanse Freeze"
+
+[node name="LblLog" type="RichTextLabel" parent="VBoxContainer" unique_id=1172132924]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true

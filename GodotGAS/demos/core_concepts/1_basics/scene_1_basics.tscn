@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://b3hfyqsa7e3br"]
+
+[ext_resource type="Script" uid="uid://c8ryrlk1erl7b" path="res://core_concepts/1_basics/scene_1_basics.gd" id="1_guucl"]
+
+[node name="Scene1Basics" type="Control" unique_id=1704782663]
+layout_mode = 3
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_vertical = 2
+script = ExtResource("1_guucl")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1203095793]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 599.0
+grow_vertical = 2
+
+[node name="Stats" type="HBoxContainer" parent="VBoxContainer" unique_id=343848297]
+layout_mode = 2
+
+[node name="LblHealth" type="Label" parent="VBoxContainer/Stats" unique_id=1277921043]
+layout_mode = 2
+
+[node name="LblMana" type="Label" parent="VBoxContainer/Stats" unique_id=34117455]
+layout_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="VBoxContainer" unique_id=377359672]
+layout_mode = 2
+
+[node name="BtnDamage" type="Button" parent="VBoxContainer/Actions" unique_id=2102531798]
+layout_mode = 2
+text = "Cast Damage [15 dmg] (-20 Mana, 2s CD)"
+
+[node name="BtnHeal" type="Button" parent="VBoxContainer/Actions" unique_id=283264035]
+layout_mode = 2
+text = "Cast Heal [15 HP] (-30 Mana, 1s CD)"
+
+[node name="LblLog" type="RichTextLabel" parent="VBoxContainer" unique_id=970818886]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true

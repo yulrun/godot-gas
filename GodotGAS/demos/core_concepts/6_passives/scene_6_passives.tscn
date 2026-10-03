@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://vqinjlj1x170"]
+
+[ext_resource type="Script" uid="uid://chjnokiutstwb" path="res://addons/GodotGAS/demos/core_concepts/6_passives/scene_6_passives.gd" id="1_3jysx"]
+
+[node name="Scene6Passives" type="Control" unique_id=2103973524]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_3jysx")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=704251613]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 407.0
+grow_vertical = 2
+
+[node name="Stats" type="HBoxContainer" parent="VBoxContainer" unique_id=983660913]
+layout_mode = 2
+
+[node name="LblHealth" type="Label" parent="VBoxContainer/Stats" unique_id=1665497820]
+layout_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="VBoxContainer" unique_id=516790632]
+layout_mode = 2
+
+[node name="BtnBurn" type="Button" parent="VBoxContainer/Actions" unique_id=1095980627]
+layout_mode = 2
+text = "Ignite (-15 HP / sec)"
+
+[node name="BtnDouse" type="Button" parent="VBoxContainer/Actions" unique_id=944819308]
+layout_mode = 2
+text = "Douse Fire"
+
+[node name="LblLog" type="RichTextLabel" parent="VBoxContainer" unique_id=491081709]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
