@@ -66,6 +66,8 @@ signal ability_removed(ability: GameplayAbility)
 ## If true, this ASC will automatically spawn a Synchronizer to handle Attributes and Tags,
 ## while also intercepting and routing Inputs/Effects via RPCs for Server Authority.
 @export var is_networked: bool = false
+@export var network_root_node: Node = self
+var dedicated_sync: MultiplayerSynchronizer
 
 @export_category("Debugging")
 @export var debug_signal_log: bool = false
@@ -116,25 +118,7 @@ func _ready() -> void:
 	
 	# Auto-Networking Synchronization Setup
 	if is_networked:
-		var sync = MultiplayerSynchronizer.new()
-		sync.name = "GASSynchronizer"
-		var rep_config = SceneReplicationConfig.new()
-		
-		# 1. Sync Active Tags Array
-		rep_config.add_property(NodePath(".:_active_tags"))
-		
-		# 2. Dynamically map and sync all instanced Attributes!
-		for i in range(attribute_sets.size()):
-			if attribute_sets[i]:
-				var set_path = ".:attribute_sets:" + str(i)
-				for prop in attribute_sets[i].get_property_list():
-					if prop.class_name == &"AttributeData":
-						rep_config.add_property(NodePath(set_path + ":" + prop.name + ":current_value"))
-						rep_config.add_property(NodePath(set_path + ":" + prop.name + ":base_value"))
-						rep_config.add_property(NodePath(set_path + ":" + prop.name + ":runtime_delta"))
-		
-		sync.replication_config = rep_config
-		add_child(sync)
+		reconfigure_network_sync()
 	
 	# Debug Binding
 	if debug_signal_log:
@@ -1347,4 +1331,83 @@ func _get_debug_spec_name(spec: GameplayEffectSpec) -> String:
 		return spec.effect_def.resource_path.get_file().get_basename()
 		
 	return "[color=gray]Unnamed Effect Resource[/color]"
+#endregion
+
+#region Networking Synchronizable Properties
+func reconfigure_network_sync():
+	if is_networked:
+		# 1. Ensure a Synchronizer is set.
+		if dedicated_sync == null:
+			dedicated_sync = MultiplayerSynchronizer.new()
+			dedicated_sync.set_multiplayer_authority(get_multiplayer_authority())
+			add_child(dedicated_sync)
+			dedicated_sync.owner = owner if owner else self
+			dedicated_sync.name = "GASSynchronizer"
+
+		# 2. Set Synchronizer root to sync target, allowing values to be set on spawn.
+		dedicated_sync.root_path = "../" + String(get_path_to(network_root_node))
+		var path_to_self = String(network_root_node.get_path_to(self))
+		
+		
+		var rep_config = SceneReplicationConfig.new()
+		
+		# 3. Sync Active Tags Array
+		register_property_on_change(rep_config, path_to_self + "/:_active_tags")
+		
+		# 4. Dynamically map and sync all instanced Attributes!
+		for paths in get_all_attributes_paths():
+			register_property_on_change(rep_config, "%s:%s" % [path_to_self, paths])
+		
+		dedicated_sync.replication_config = rep_config
+
+# Register a property to synchronize only on_change and set on spawn.
+func register_property_on_change(rep_config: SceneReplicationConfig, property: NodePath):
+	rep_config.add_property(property)
+	rep_config.property_set_replication_mode(property, SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE)
+	rep_config.property_set_spawn(property, true)
+#endregion
+
+#region Custom Attributes to help with Synchronizer
+func get_all_attributes_paths() -> PackedStringArray:
+	var output = PackedStringArray()
+	for i in range(attribute_sets.size()):
+		if attribute_sets[i]:
+			for prop in attribute_sets[i].get_property_list():
+				if prop.class_name == &"AttributeData":
+					output.push_back("attribute_sets_%s_%s_current_value" % [str(i), prop.name])
+					output.push_back("attribute_sets_%s_%s_base_value" % [str(i), prop.name])
+					output.push_back("attribute_sets_%s_%s_runtime_delta" % [str(i), prop.name])
+
+	return output
+
+func _get_property_list():
+	var properties: Array[Dictionary] = []
+	for path in get_all_attributes_paths():
+		properties.append({
+			name = path,
+			type = TYPE_FLOAT,
+			hint = PROPERTY_HINT_NONE,
+			hint_string = "",
+		})
+	return properties
+
+static var attribute_regex := RegEx.create_from_string("^attribute_sets_(\\d+)_(.+)_(current_value|base_value)$")
+func _get(property):
+	var found = attribute_regex.search(property)
+	if found:
+		var index: int = found.get_string(1).to_int()
+		var value: String = found.get_string(2)
+		var variant: String = found.get_string(3)
+		return attribute_sets[index][value][variant]
+	return null
+
+func _set(property, new_value):
+	var found = attribute_regex.search(property)
+	if found:
+		var index: int = found.get_string(1).to_int()
+		var value: String = found.get_string(2)
+		var variant: String = found.get_string(3)
+		attribute_sets[index][value][variant] = new_value
+		return true
+	return false
 #endregion
